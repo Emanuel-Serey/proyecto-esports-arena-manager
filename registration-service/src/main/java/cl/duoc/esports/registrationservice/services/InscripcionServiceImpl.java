@@ -1,5 +1,7 @@
 package cl.duoc.esports.registrationservice.services;
 
+import cl.duoc.esports.registrationservice.clients.UsuarioClient;
+import cl.duoc.esports.registrationservice.dto.UsuarioDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cl.duoc.esports.registrationservice.clients.SancionClient;
@@ -35,6 +37,9 @@ public class InscripcionServiceImpl implements InscripcionService {
     @Autowired
     private SancionClient sancionClient;
 
+    @Autowired
+    private UsuarioClient usuarioClient;
+
     @Transactional
     @Override
     public InscripcionDTO crearInscripcion(InscripcionDTO inscripcionDTO) {
@@ -67,6 +72,9 @@ public class InscripcionServiceImpl implements InscripcionService {
         }
 
         if (inscripcionDTO.getTipoParticipante().equalsIgnoreCase("JUGADOR")) {
+
+            validarJugadorActivo(inscripcionDTO.getJugadorId());
+
             if (inscripcionRepository.existsByTorneoIdAndJugadorId(
                     inscripcionDTO.getTorneoId(),
                     inscripcionDTO.getJugadorId())) {
@@ -297,6 +305,26 @@ public class InscripcionServiceImpl implements InscripcionService {
         }
     }
 
+    private void validarJugadorActivo(Long jugadorId) {
+        try {
+            logger.info("Validando jugadorId={} desde user-service", jugadorId);
+
+            UsuarioDTO usuarioDTO = usuarioClient.buscarUsuarioPorId(jugadorId);
+
+            if (usuarioDTO.getEstado() == null || !usuarioDTO.getEstado().equalsIgnoreCase("ACTIVO")) {
+                logger.warn("JugadorId={} no está activo", jugadorId);
+                throw new InscripcionException("El jugador no está activo");
+            }
+
+        } catch (InscripcionException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+            logger.error("No se pudo validar jugadorId={} desde user-service", jugadorId);
+            throw new InscripcionException("El jugador no existe o no está disponible");
+        }
+    }
+
     private void validarSancionActiva(InscripcionDTO inscripcionDTO) {
 
         try {
@@ -333,6 +361,7 @@ public class InscripcionServiceImpl implements InscripcionService {
             throw new InscripcionException("No se pudo validar si el participante tiene sanciones activas");
         }
     }
+
 
     private InscripcionDTO convertirADTO(Inscripcion inscripcion) {
         InscripcionDTO inscripcionDTO = new InscripcionDTO();
