@@ -91,164 +91,27 @@ Cada microservicio cuenta con su propia base de datos H2, evitando una base de d
 
 ## Diagrama del ecosistema de microservicios
 
-```mermaid
-flowchart LR
-    USER[user-service<br/>Usuarios]
-    GAME[game-service<br/>Juegos]
-    TEAM[team-service<br/>Equipos]
-    TOURNAMENT[tournament-service<br/>Torneos]
-    SANCTION[sanction-service<br/>Sanciones]
-    REGISTRATION[registration-service<br/>Inscripciones]
-    MATCH[match-service<br/>Partidas]
-    RESULT[result-service<br/>Resultados]
-    RANKING[ranking-service<br/>Ranking]
-    PRIZE[prize-service<br/>Premios]
+Las flechas indican que el microservicio de origen consulta o consume al microservicio de destino mediante OpenFeign.
 
-    TOURNAMENT --> GAME
-
-    TEAM --> USER
-    TEAM --> GAME
-
-    SANCTION --> USER
-    SANCTION --> TEAM
-
-    REGISTRATION --> TOURNAMENT
-    REGISTRATION --> TEAM
-    REGISTRATION --> USER
-    REGISTRATION --> SANCTION
-
-    MATCH --> TOURNAMENT
-    MATCH --> REGISTRATION
-
-    RESULT --> MATCH
-
-    RANKING --> TOURNAMENT
-    RANKING --> REGISTRATION
-    RANKING --> RESULT
-
-    PRIZE --> TOURNAMENT
-    PRIZE --> RANKING
-```
+![Diagrama del ecosistema de microservicios](docs/img/diagramas/diagrama-ecosistema-microservicios.png)
 
 ---
 
 ## Modelo relacional de bases de datos principales
 
-Cada microservicio posee su propia base de datos H2. Por este motivo, las relaciones entre servicios no se implementan como claves foráneas directas entre bases de datos, sino mediante IDs lógicos y validaciones realizadas a través de OpenFeign.
+Cada microservicio posee su propia base de datos H2. Por este motivo, las relaciones entre servicios no se implementan como claves foráneas físicas entre bases de datos distintas, sino mediante IDs lógicos y validaciones realizadas entre microservicios.
 
-```mermaid
-erDiagram
-    USUARIOS {
-        Long id
-        String nombre
-        String nickname
-        String email
-        String rol
-        String estado
-        LocalDate fecha_registro
-    }
+### Modelo relacional: user-service, game-service, tournament-service y team-service
 
-    JUEGOS {
-        Long id
-        String nombre
-        String genero
-        String modalidad
-        Integer jugadores_por_equipo
-        Boolean estado
-    }
+![Modelo relacional user game tournament team](docs/img/diagramas/modelo-relacional-user-game-tournament-team.png)
 
-    TORNEOS {
-        Long id
-        String nombre
-        Long juego_id
-        LocalDate fecha_inicio
-        LocalDate fecha_fin
-        Integer cupo_maximo
-        String estado
-        String modalidad
-    }
+### Modelo relacional: registration-service, sanction-service y match-service
 
-    EQUIPOS {
-        Long id
-        String nombre
-        Long capitan_id
-        Long juego_principal_id
-        String estado
-    }
+![Modelo relacional registration sanction match](docs/img/diagramas/modelo-relacional-registration-sanction-match.png)
 
-    MIEMBROS_EQUIPO {
-        Long id
-        Long usuario_id
-        String rol_dentro_equipo
-        Long equipo_id
-    }
+### Modelo relacional: result-service, ranking-service y prize-service
 
-    INSCRIPCIONES {
-        Long id
-        Long torneo_id
-        Long equipo_id
-        Long jugador_id
-        String tipo_participante
-        String estado
-        LocalDate fecha_inscripcion
-    }
-
-    SANCIONES {
-        Long id
-        Long usuario_id
-        Long equipo_id
-        String motivo
-        LocalDate fecha_inicio
-        LocalDate fecha_fin
-        String estado
-        String severidad
-    }
-
-    PARTIDAS {
-        Long id
-        Long torneo_id
-        Long participante_aid
-        Long participante_bid
-        String ronda
-        LocalDateTime fecha_hora
-        String estado
-    }
-
-    RESULTADOS {
-        Long id
-        Long partida_id
-        Long ganador_id
-        Integer puntaje_a
-        Integer puntaje_b
-        String estado_validacion
-        LocalDate fecha_registro
-    }
-
-    RANKINGS {
-        Long id
-        Long torneo_id
-        Long participante_id
-        Integer puntos
-        Integer victorias
-        Integer derrotas
-        Integer diferencia
-        Integer posicion
-    }
-
-    PREMIOS {
-        Long id
-        Long torneo_id
-        Long participante_id
-        Integer posicion
-        String tipo_premio
-        String descripcion
-        String estado_entrega
-        LocalDate fecha_asignacion
-    }
-
-
-    EQUIPOS ||--o{ MIEMBROS_EQUIPO : contiene
-```
+![Modelo relacional result ranking prize](docs/img/diagramas/modelo-relacional-result-ranking-prize.png)
 
 ---
 
