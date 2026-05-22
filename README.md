@@ -406,3 +406,4 @@ También se incluye evidencia de planificación en Trello u otra herramienta col
 ```text
 docs/evidencias/
 ```
+
