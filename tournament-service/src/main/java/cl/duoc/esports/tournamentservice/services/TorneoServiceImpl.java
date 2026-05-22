@@ -47,7 +47,7 @@ public class TorneoServiceImpl implements TorneoService {
         torneo.setFechaFin(torneoDTO.getFechaFin());
         torneo.setCupoMaximo(torneoDTO.getCupoMaximo());
         torneo.setModalidad(torneoDTO.getModalidad());
-        torneo.setEstado("BORRADOR");
+        torneo.setEstado(torneoDTO.getEstado());
 
         Torneo torneoGuardado = torneoRepository.save(torneo);
 
@@ -103,6 +103,7 @@ public class TorneoServiceImpl implements TorneoService {
         torneo.setFechaFin(torneoDTO.getFechaFin());
         torneo.setCupoMaximo(torneoDTO.getCupoMaximo());
         torneo.setModalidad(torneoDTO.getModalidad());
+        torneo.setEstado(torneoDTO.getEstado());
 
         Torneo torneoActualizado = torneoRepository.save(torneo);
 
