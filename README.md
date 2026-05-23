@@ -356,37 +356,41 @@ Consola H2 por microservicio:
 
 ## Colección Postman
 
-Se incluye una colección Postman con pruebas REST para los flujos principales del sistema.
+Se incluye evidencia de pruebas REST realizadas en Postman para validar los flujos principales del sistema.  
+Las pruebas consideran creación de datos base, validaciones de negocio, comunicación entre microservicios y cierre del flujo competitivo.
 
-Flujos principales considerados:
+### Flujos principales considerados
+
+1. Crear usuario.
+2. Crear juego.
+3. Crear torneo.
+4. Crear equipo.
+5. Crear sanción.
+6. Intentar inscripción con jugador sancionado.
+7. Crear inscripción válida de equipo.
+8. Validar inscripción por torneo.
+9. Intentar crear partida con participante no inscrito.
+10. Crear partida válida.
+11. Registrar resultado.
+12. Validar resultado.
+13. Actualizar ranking.
+14. Consultar ranking por torneo.
+15. Asignar premio.
+16. Marcar premio como entregado.
+
+Las capturas de evidencia se encuentran en:
 
 ```text
-1. Crear usuario
-2. Crear juego
-3. Crear torneo
-4. Crear equipo
-5. Crear sanción
-6. Intentar inscripción con sanción activa
-7. Crear inscripción válida
-8. Crear partida
-9. Registrar resultado
-10. Actualizar ranking
-11. Asignar premio
-```
-
-La colección se encuentra en:
-
-```text
-docs/postman/
+docs/img/postman/
 ```
 
 ---
 
 ## Evidencia de trabajo colaborativo
 
-El trabajo colaborativo se organizó mediante GitHub y ramas por microservicio.
+El trabajo colaborativo se organizó mediante GitHub, utilizando una rama principal, una rama de integración y ramas específicas por microservicio. Esto permitió separar el desarrollo por responsabilidades, integrar avances de manera progresiva y mantener trazabilidad de los cambios realizados.
 
-Ramas utilizadas:
+### Ramas utilizadas
 
 ```text
 main
@@ -398,7 +402,9 @@ team-service
 sanction-service
 registration-service
 match-service
-result-ranking-prize
+result-service
+ranking-service
+prize-service
 ```
 
 También se incluye evidencia de planificación en Trello u otra herramienta colaborativa.
