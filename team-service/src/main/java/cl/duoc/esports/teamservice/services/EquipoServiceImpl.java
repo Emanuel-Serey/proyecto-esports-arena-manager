@@ -1,5 +1,6 @@
 package cl.duoc.esports.teamservice.services;
 
+import cl.duoc.esports.teamservice.repositories.MiembroEquipoRepository;
 import cl.duoc.esports.teamservice.clients.UsuarioClient;
 import cl.duoc.esports.teamservice.dto.UsuarioDTO;
 import cl.duoc.esports.teamservice.clients.JuegoClient;
@@ -24,6 +25,9 @@ import java.util.Set;
 public class EquipoServiceImpl implements EquipoService {
 
     private static final Logger logger = LoggerFactory.getLogger(EquipoServiceImpl.class);
+
+    @Autowired
+    private MiembroEquipoRepository miembroEquipoRepository;
 
     @Autowired
     private EquipoRepository equipoRepository;
@@ -58,6 +62,7 @@ public class EquipoServiceImpl implements EquipoService {
 
         validarCapitanIncluido(equipoDTO.getCapitanId(), equipoDTO.getMiembros());
         validarMiembrosDuplicados(equipoDTO.getMiembros());
+        validarUsuariosNoPertenecenAOtroEquipo(equipoDTO.getMiembros());
 
         Equipo equipo = new Equipo();
 
@@ -213,6 +218,11 @@ public class EquipoServiceImpl implements EquipoService {
             throw new EquipoException("El usuario ya pertenece al equipo");
         }
 
+        if (miembroEquipoRepository.existsByUsuarioIdAndEquipo_Estado(miembroDTO.getUsuarioId(), "ACTIVO")) {
+            logger.warn("UsuarioId={} ya pertenece a otro equipo activo", miembroDTO.getUsuarioId());
+            throw new EquipoException("El usuario ya pertenece a otro equipo activo");
+        }
+
         MiembroEquipo miembro = new MiembroEquipo();
 
         miembro.setUsuarioId(miembroDTO.getUsuarioId());
@@ -356,6 +366,15 @@ public class EquipoServiceImpl implements EquipoService {
     private void validarUsuariosMiembrosActivos(List<MiembroEquipoDTO> miembros) {
         for (MiembroEquipoDTO miembro : miembros) {
             validarUsuarioActivo(miembro.getUsuarioId());
+        }
+    }
+
+    private void validarUsuariosNoPertenecenAOtroEquipo(List<MiembroEquipoDTO> miembros) {
+        for (MiembroEquipoDTO miembro : miembros) {
+            if (miembroEquipoRepository.existsByUsuarioIdAndEquipo_Estado(miembro.getUsuarioId(), "ACTIVO")) {
+                logger.warn("UsuarioId={} ya pertenece a otro equipo activo", miembro.getUsuarioId());
+                throw new EquipoException("El usuario ya pertenece a otro equipo activo");
+            }
         }
     }
 
