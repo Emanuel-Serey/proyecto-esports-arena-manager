@@ -10,4 +10,6 @@ public interface MiembroEquipoRepository extends JpaRepository<MiembroEquipo, Lo
     List<MiembroEquipo> findByEquipo_Id(Long equipoId);
 
     boolean existsByEquipo_IdAndUsuarioId(Long equipoId, Long usuarioId);
+
+    boolean existsByUsuarioIdAndEquipo_Estado(Long usuarioId, String estado);
 }
