@@ -407,9 +407,8 @@ ranking-service
 prize-service
 ```
 
-También se incluye evidencia de planificación en Trello u otra herramienta colaborativa.
+### Evidencia de planificación en Trello
 
-```text
-docs/evidencias/
-```
+También se utilizó Trello para organizar las tareas del equipo, dividiendo el trabajo entre tareas pendientes, en proceso y completadas.
 
+![Evidencia tablero Trello](docs/img/evidencias/Tareas-trello.png)
