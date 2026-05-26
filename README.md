@@ -4,6 +4,11 @@ Proyecto desarrollado para la asignatura FullStack 1, basado en una arquitectura
 
 El sistema permite administrar una plataforma de torneos eSports, considerando la gestión de usuarios, juegos, equipos, torneos, inscripciones, sanciones, partidas, resultados, ranking y premios.
 
+## Informe del proyecto
+
+El informe técnico del proyecto se encuentra disponible en el siguiente archivo:
+
+[Descargar informe PDF](Informe_eSports_Arena_Manager.pdf)
 ---
 
 ## Integrantes
