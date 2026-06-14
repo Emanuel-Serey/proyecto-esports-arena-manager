@@ -2,6 +2,8 @@ package cl.duoc.esports.tournamentservice.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import cl.duoc.esports.tournamentservice.clients.JuegoClient;
 import cl.duoc.esports.tournamentservice.dto.JuegoDTO;
 import cl.duoc.esports.tournamentservice.dto.TorneoDTO;
@@ -36,7 +38,7 @@ public class TorneoServiceImpl implements TorneoService {
 
         if (torneoDTO.getFechaFin().isBefore(torneoDTO.getFechaInicio())) {
             logger.warn("Fecha de fin inválida para torneo nombre={}", torneoDTO.getNombre());
-            throw new TorneoException("La fecha de fin no puede ser anterior a la fecha de inicio");
+            throw new TorneoException("La fecha de fin no puede ser anterior a la fecha de inicio", HttpStatus.UNPROCESSABLE_CONTENT);
         }
 
         Torneo torneo = new Torneo();
@@ -73,7 +75,7 @@ public class TorneoServiceImpl implements TorneoService {
 
         Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Torneo no encontrado id={}", id);
-            return new TorneoException("Torneo no encontrado");
+            return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
         });
 
         return convertirADTO(torneo);
@@ -87,14 +89,14 @@ public class TorneoServiceImpl implements TorneoService {
 
         Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Torneo no encontrado para actualizar. id={}", id);
-            return new TorneoException("Torneo no encontrado");
+            return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
         });
 
         validarJuegoDisponible(torneoDTO.getJuegoId());
 
         if (torneoDTO.getFechaFin().isBefore(torneoDTO.getFechaInicio())) {
             logger.warn("Fecha de fin inválida al actualizar torneo id={}", id);
-            throw new TorneoException("La fecha de fin no puede ser anterior a la fecha de inicio");
+            throw new TorneoException("La fecha de fin no puede ser anterior a la fecha de inicio", HttpStatus.UNPROCESSABLE_CONTENT);
         }
 
         torneo.setNombre(torneoDTO.getNombre());
@@ -120,7 +122,7 @@ public class TorneoServiceImpl implements TorneoService {
 
         Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Torneo no encontrado para cancelar. id={}", id);
-            return new TorneoException("Torneo no encontrado");
+            return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
         });
 
         torneo.setEstado("CANCELADO");
@@ -137,7 +139,7 @@ public class TorneoServiceImpl implements TorneoService {
 
         Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Torneo no encontrado para cerrar. id={}", id);
-            return new TorneoException("Torneo no encontrado");
+            return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
         });
 
         torneo.setEstado("CERRADO");
@@ -181,14 +183,19 @@ public class TorneoServiceImpl implements TorneoService {
 
             if (!Boolean.TRUE.equals(juegoDTO.getEstado())) {
                 logger.warn("JuegoId={} no está activo", juegoId);
-                throw new TorneoException("El juego no está activo");
+                throw new TorneoException("El juego no está activo", HttpStatus.CONFLICT);
             }
 
         } catch (TorneoException ex) {
             throw ex;
+
+        } catch (FeignException.NotFound ex) {
+            logger.warn("JuegoId={} no encontrado en game-service", juegoId);
+            throw new TorneoException("El juego no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar juegoId={} desde game-service", juegoId);
-            throw new TorneoException("El juego no existe o no está disponible");
+            throw new TorneoException("No se pudo validar el juego desde game-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
