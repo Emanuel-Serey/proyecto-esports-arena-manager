@@ -4,6 +4,8 @@ import cl.duoc.esports.registrationservice.clients.UsuarioClient;
 import cl.duoc.esports.registrationservice.dto.UsuarioDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import cl.duoc.esports.registrationservice.clients.SancionClient;
 import cl.duoc.esports.registrationservice.clients.EquipoClient;
 import cl.duoc.esports.registrationservice.clients.TorneoClient;
@@ -67,7 +69,7 @@ public class InscripcionServiceImpl implements InscripcionService {
                 logger.warn("Intento de inscripción duplicada para equipoId={} en torneoId={}",
                         inscripcionDTO.getEquipoId(), inscripcionDTO.getTorneoId());
 
-                throw new InscripcionException("El equipo ya está inscrito en este torneo");
+                throw new InscripcionException("El equipo ya está inscrito en este torneo", HttpStatus.CONFLICT);
             }
         }
 
@@ -82,7 +84,7 @@ public class InscripcionServiceImpl implements InscripcionService {
                 logger.warn("Intento de inscripción duplicada para jugadorId={} en torneoId={}",
                         inscripcionDTO.getJugadorId(), inscripcionDTO.getTorneoId());
 
-                throw new InscripcionException("El jugador ya está inscrito en este torneo");
+                throw new InscripcionException("El jugador ya está inscrito en este torneo", HttpStatus.CONFLICT);
             }
         }
 
@@ -196,7 +198,7 @@ public class InscripcionServiceImpl implements InscripcionService {
     private Inscripcion obtenerInscripcionPorId(Long id) {
         return inscripcionRepository.findById(id).orElseThrow(() -> {
             logger.warn("Inscripción no encontrada id={}", id);
-            return new InscripcionException("Inscripción no encontrada");
+            return new InscripcionException("Inscripción no encontrada", HttpStatus.NOT_FOUND);
         });
     }
 
@@ -205,14 +207,14 @@ public class InscripcionServiceImpl implements InscripcionService {
         if (inscripcionDTO.getTipoParticipante().equalsIgnoreCase("EQUIPO")) {
             if (inscripcionDTO.getEquipoId() == null) {
                 logger.warn("Inscripción inválida: tipo EQUIPO sin equipoId");
-                throw new InscripcionException("Si el tipo de participante es EQUIPO, debe indicar equipoId");
+                throw new InscripcionException("Si el tipo de participante es EQUIPO, debe indicar equipoId", HttpStatus.BAD_REQUEST);
             }
 
             if (inscripcionDTO.getJugadorId() != null) {
                 logger.warn("Inscripción inválida: tipo EQUIPO incluye jugadorId={}",
                         inscripcionDTO.getJugadorId());
 
-                throw new InscripcionException("Una inscripción de tipo EQUIPO no debe incluir jugadorId");
+                throw new InscripcionException("Una inscripción de tipo EQUIPO no debe incluir jugadorId", HttpStatus.BAD_REQUEST);
             }
 
             return;
@@ -221,21 +223,21 @@ public class InscripcionServiceImpl implements InscripcionService {
         if (inscripcionDTO.getTipoParticipante().equalsIgnoreCase("JUGADOR")) {
             if (inscripcionDTO.getJugadorId() == null) {
                 logger.warn("Inscripción inválida: tipo JUGADOR sin jugadorId");
-                throw new InscripcionException("Si el tipo de participante es JUGADOR, debe indicar jugadorId");
+                throw new InscripcionException("Si el tipo de participante es JUGADOR, debe indicar jugadorId", HttpStatus.BAD_REQUEST);
             }
 
             if (inscripcionDTO.getEquipoId() != null) {
                 logger.warn("Inscripción inválida: tipo JUGADOR incluye equipoId={}",
                         inscripcionDTO.getEquipoId());
 
-                throw new InscripcionException("Una inscripción de tipo JUGADOR no debe incluir equipoId");
+                throw new InscripcionException("Una inscripción de tipo JUGADOR no debe incluir equipoId", HttpStatus.BAD_REQUEST);
             }
 
             return;
         }
 
         logger.warn("Tipo de participante inválido tipo={}", inscripcionDTO.getTipoParticipante());
-        throw new InscripcionException("El tipo de participante debe ser EQUIPO o JUGADOR");
+        throw new InscripcionException("El tipo de participante debe ser EQUIPO o JUGADOR", HttpStatus.BAD_REQUEST);
     }
 
     private TorneoDTO validarTorneoDisponible(Long torneoId) {
@@ -245,27 +247,28 @@ public class InscripcionServiceImpl implements InscripcionService {
             TorneoDTO torneoDTO = torneoClient.buscarTorneoPorId(torneoId);
 
             if (torneoDTO.getEstado().equalsIgnoreCase("CANCELADO")) {
-                logger.warn("No se puede inscribir en torneo cancelado torneoId={}", torneoId);
-                throw new InscripcionException("No se puede inscribir en un torneo cancelado");
+                throw new InscripcionException("No se puede inscribir en un torneo cancelado", HttpStatus.CONFLICT);
             }
 
             if (torneoDTO.getEstado().equalsIgnoreCase("CERRADO")) {
-                logger.warn("No se puede inscribir en torneo cerrado torneoId={}", torneoId);
-                throw new InscripcionException("No se puede inscribir en un torneo cerrado");
+                throw new InscripcionException("No se puede inscribir en un torneo cerrado", HttpStatus.CONFLICT);
             }
 
             if (LocalDate.now().isAfter(torneoDTO.getFechaInicio())) {
-                logger.warn("No se puede inscribir después del inicio del torneo torneoId={}", torneoId);
-                throw new InscripcionException("No se puede inscribir después del inicio del torneo");
+                throw new InscripcionException("No se puede inscribir después del inicio del torneo", HttpStatus.CONFLICT);
             }
 
             return torneoDTO;
 
         } catch (InscripcionException ex) {
             throw ex;
+
+        } catch (FeignException.NotFound ex) {
+            throw new InscripcionException("El torneo no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar torneoId={} desde tournament-service", torneoId);
-            throw new InscripcionException("El torneo no existe o no está disponible");
+            throw new InscripcionException("No se pudo validar el torneo desde tournament-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -277,14 +280,22 @@ public class InscripcionServiceImpl implements InscripcionService {
 
             if (equipoDTO.getEstado() == null || !equipoDTO.getEstado().equalsIgnoreCase("ACTIVO")) {
                 logger.warn("EquipoId={} no está activo", equipoId);
-                throw new InscripcionException("El equipo no está activo");
+
+                throw new InscripcionException("El equipo no está activo", HttpStatus.CONFLICT);
             }
 
         } catch (InscripcionException ex) {
             throw ex;
+
+        } catch (FeignException.NotFound ex) {
+            logger.warn("EquipoId={} no encontrado en team-service", equipoId);
+
+            throw new InscripcionException("El equipo no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar equipoId={} desde team-service", equipoId);
-            throw new InscripcionException("El equipo no existe o no está disponible");
+
+            throw new InscripcionException("No se pudo validar el equipo desde team-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -301,7 +312,7 @@ public class InscripcionServiceImpl implements InscripcionService {
             logger.warn("No existen cupos disponibles para torneoId={}. inscritosActuales={} cupoMaximo={}",
                     torneoDTO.getId(), inscritosActuales, torneoDTO.getCupoMaximo());
 
-            throw new InscripcionException("No existen cupos disponibles para este torneo");
+            throw new InscripcionException("No existen cupos disponibles para este torneo", HttpStatus.CONFLICT);
         }
     }
 
@@ -313,15 +324,22 @@ public class InscripcionServiceImpl implements InscripcionService {
 
             if (usuarioDTO.getEstado() == null || !usuarioDTO.getEstado().equalsIgnoreCase("ACTIVO")) {
                 logger.warn("JugadorId={} no está activo", jugadorId);
-                throw new InscripcionException("El jugador no está activo");
+
+                throw new InscripcionException("El jugador no está activo", HttpStatus.CONFLICT);
             }
 
         } catch (InscripcionException ex) {
             throw ex;
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("JugadorId={} no encontrado en user-service", jugadorId);
+
+            throw new InscripcionException("El jugador no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar jugadorId={} desde user-service", jugadorId);
-            throw new InscripcionException("El jugador no existe o no está disponible");
+
+            throw new InscripcionException("No se pudo validar el jugador desde user-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -336,7 +354,7 @@ public class InscripcionServiceImpl implements InscripcionService {
 
                 if (Boolean.TRUE.equals(tieneSancionActiva)) {
                     logger.warn("EquipoId={} tiene sanción activa", inscripcionDTO.getEquipoId());
-                    throw new InscripcionException("No se puede inscribir un equipo con sanción activa");
+                    throw new InscripcionException("No se puede inscribir un equipo con sanción activa", HttpStatus.CONFLICT);
                 }
             }
 
@@ -348,7 +366,7 @@ public class InscripcionServiceImpl implements InscripcionService {
 
                 if (Boolean.TRUE.equals(tieneSancionActiva)) {
                     logger.warn("JugadorId={} tiene sanción activa", inscripcionDTO.getJugadorId());
-                    throw new InscripcionException("No se puede inscribir un jugador con sanción activa");
+                    throw new InscripcionException("No se puede inscribir un jugador con sanción activa", HttpStatus.CONFLICT);
                 }
             }
 
@@ -358,7 +376,7 @@ public class InscripcionServiceImpl implements InscripcionService {
             logger.error("No se pudo validar sanción activa para torneoId={}",
                     inscripcionDTO.getTorneoId());
 
-            throw new InscripcionException("No se pudo validar si el participante tiene sanciones activas");
+            throw new InscripcionException("No se pudo validar si el participante tiene sanciones activas", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
