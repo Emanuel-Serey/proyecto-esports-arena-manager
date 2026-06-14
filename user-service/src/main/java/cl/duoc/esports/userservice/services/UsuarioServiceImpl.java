@@ -6,6 +6,7 @@ import cl.duoc.esports.userservice.models.Usuario;
 import cl.duoc.esports.userservice.repositories.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,14 +33,14 @@ public class UsuarioServiceImpl implements UsuarioService {
             logger.warn("Intento de crear usuario con nickname duplicado={}",
                     usuarioDTO.getNickname());
 
-            throw new UsuarioException("Ya existe un usuario con ese nickname");
+            throw new UsuarioException("Ya existe un usuario con ese nickname", HttpStatus.CONFLICT);
         }
 
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
             logger.warn("Intento de crear usuario con email duplicado={}",
                     usuarioDTO.getEmail());
 
-            throw new UsuarioException("Ya existe un usuario con ese email");
+            throw new UsuarioException("Ya existe un usuario con ese email", HttpStatus.CONFLICT);
         }
 
         Usuario usuario = new Usuario();
@@ -95,7 +96,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             logger.warn("Intento de actualizar usuario id={} con nickname duplicado={}",
                     id, usuarioDTO.getNickname());
 
-            throw new UsuarioException("Ya existe un usuario con ese nickname");
+            throw new UsuarioException("Ya existe un usuario con ese nickname", HttpStatus.CONFLICT);
         }
 
         if (!usuario.getEmail().equalsIgnoreCase(usuarioDTO.getEmail())
@@ -104,7 +105,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             logger.warn("Intento de actualizar usuario id={} con email duplicado={}",
                     id, usuarioDTO.getEmail());
 
-            throw new UsuarioException("Ya existe un usuario con ese email");
+            throw new UsuarioException("Ya existe un usuario con ese email", HttpStatus.CONFLICT);
         }
 
         usuario.setNombre(usuarioDTO.getNombre());
@@ -172,7 +173,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private Usuario obtenerUsuarioPorId(Long id) {
         return usuarioRepository.findById(id).orElseThrow(() -> {
             logger.warn("Usuario no encontrado id={}", id);
-            return new UsuarioException("Usuario no encontrado");
+            return new UsuarioException("Usuario no encontrado", HttpStatus.NOT_FOUND);
         });
     }
 
