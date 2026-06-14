@@ -10,6 +10,8 @@ import cl.duoc.esports.sanctionservice.models.Sancion;
 import cl.duoc.esports.sanctionservice.repositories.SancionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -183,21 +185,21 @@ public class SancionServiceImpl implements SancionService {
     private Sancion obtenerSancionPorId(Long id) {
         return sancionRepository.findById(id).orElseThrow(() -> {
             logger.warn("Sanción no encontrada id={}", id);
-            return new SancionException("Sanción no encontrada");
+            return new SancionException("Sanción no encontrada", HttpStatus.NOT_FOUND);
         });
     }
 
     private void validarUsuarioOEquipo(SancionDTO sancionDTO) {
         if (sancionDTO.getUsuarioId() == null && sancionDTO.getEquipoId() == null) {
             logger.warn("Sanción inválida: no se indicó usuarioId ni equipoId");
-            throw new SancionException("Debe indicar usuarioId o equipoId");
+            throw new SancionException("Debe indicar usuarioId o equipoId", HttpStatus.BAD_REQUEST);
         }
 
         if (sancionDTO.getUsuarioId() != null && sancionDTO.getEquipoId() != null) {
             logger.warn("Sanción inválida: usuarioId={} y equipoId={} enviados al mismo tiempo",
                     sancionDTO.getUsuarioId(), sancionDTO.getEquipoId());
 
-            throw new SancionException("Una sanción no puede tener usuarioId y equipoId al mismo tiempo");
+            throw new SancionException("Una sanción no puede tener usuarioId y equipoId al mismo tiempo", HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -206,7 +208,7 @@ public class SancionServiceImpl implements SancionService {
             logger.warn("Fechas inválidas para sanción. fechaInicio={} fechaFin={}",
                     sancionDTO.getFechaInicio(), sancionDTO.getFechaFin());
 
-            throw new SancionException("La fecha de fin no puede ser anterior a la fecha de inicio");
+            throw new SancionException("La fecha de fin no puede ser anterior a la fecha de inicio", HttpStatus.UNPROCESSABLE_CONTENT);
         }
     }
 
@@ -214,43 +216,61 @@ public class SancionServiceImpl implements SancionService {
 
         if (sancionDTO.getUsuarioId() != null) {
             try {
-                logger.info("Validando usuarioId={} desde user-service", sancionDTO.getUsuarioId());
+                logger.info("Validando usuarioId={} desde user-service",
+                        sancionDTO.getUsuarioId());
 
                 UsuarioDTO usuarioDTO = usuarioClient.buscarUsuarioPorId(sancionDTO.getUsuarioId());
 
                 if (usuarioDTO.getEstado() == null || !usuarioDTO.getEstado().equalsIgnoreCase("ACTIVO")) {
                     logger.warn("UsuarioId={} no está activo", sancionDTO.getUsuarioId());
-                    throw new SancionException("El usuario no está activo");
+
+                    throw new SancionException("El usuario no está activo", HttpStatus.CONFLICT);
                 }
 
             } catch (SancionException ex) {
                 throw ex;
+
+            } catch (FeignException.NotFound ex) {
+                logger.warn("UsuarioId={} no encontrado en user-service",
+                        sancionDTO.getUsuarioId());
+
+                throw new SancionException("El usuario no existe", HttpStatus.NOT_FOUND);
+
             } catch (Exception ex) {
                 logger.error("No se pudo validar usuarioId={} desde user-service",
                         sancionDTO.getUsuarioId());
 
-                throw new SancionException("El usuario no existe o no está disponible");
+                throw new SancionException("No se pudo validar el usuario desde user-service", HttpStatus.SERVICE_UNAVAILABLE);
             }
         }
 
         if (sancionDTO.getEquipoId() != null) {
             try {
-                logger.info("Validando equipoId={} desde team-service", sancionDTO.getEquipoId());
+                logger.info("Validando equipoId={} desde team-service",
+                        sancionDTO.getEquipoId());
 
                 EquipoDTO equipoDTO = equipoClient.buscarEquipoPorId(sancionDTO.getEquipoId());
 
                 if (equipoDTO.getEstado() == null || !equipoDTO.getEstado().equalsIgnoreCase("ACTIVO")) {
                     logger.warn("EquipoId={} no está activo", sancionDTO.getEquipoId());
-                    throw new SancionException("El equipo no está activo");
+
+                    throw new SancionException("El equipo no está activo", HttpStatus.CONFLICT);
                 }
 
             } catch (SancionException ex) {
                 throw ex;
+
+            } catch (FeignException.NotFound ex) {
+                logger.warn("EquipoId={} no encontrado en team-service",
+                        sancionDTO.getEquipoId());
+
+                throw new SancionException("El equipo no existe", HttpStatus.NOT_FOUND);
+
             } catch (Exception ex) {
                 logger.error("No se pudo validar equipoId={} desde team-service",
                         sancionDTO.getEquipoId());
 
-                throw new SancionException("El equipo no existe o no está disponible");
+                throw new SancionException("No se pudo validar el equipo desde team-service", HttpStatus.SERVICE_UNAVAILABLE);
             }
         }
     }

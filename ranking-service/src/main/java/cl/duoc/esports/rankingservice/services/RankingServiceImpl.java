@@ -12,6 +12,8 @@ import cl.duoc.esports.rankingservice.models.Ranking;
 import cl.duoc.esports.rankingservice.repositories.RankingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +54,7 @@ public class RankingServiceImpl implements RankingService {
             logger.warn("Intento de duplicar participanteId={} en ranking del torneoId={}",
                     rankingDTO.getParticipanteId(), rankingDTO.getTorneoId());
 
-            throw new RankingException("El participante ya existe en el ranking de este torneo");
+            throw new RankingException("El participante ya existe en el ranking de este torneo", HttpStatus.CONFLICT);
         }
 
         Ranking ranking = new Ranking();
@@ -129,7 +131,7 @@ public class RankingServiceImpl implements RankingService {
                     logger.warn("ParticipanteId={} no existe en ranking del torneoId={}",
                             participanteId, torneoId);
 
-                    return new RankingException("El participante no existe en el ranking de este torneo");
+                    return new RankingException("El participante no existe en el ranking de este torneo", HttpStatus.NOT_FOUND);
                 });
 
         return convertirADTO(ranking);
@@ -186,7 +188,7 @@ public class RankingServiceImpl implements RankingService {
             logger.warn("ResultadoId={} no está validado. estadoValidacion={}",
                     resultadoId, resultadoDTO.getEstadoValidacion());
 
-            throw new RankingException("Solo resultados validados pueden actualizar el ranking");
+            throw new RankingException("Solo resultados validados pueden actualizar el ranking", HttpStatus.CONFLICT);
         }
 
         Long ganadorId = resultadoDTO.getGanadorId();
@@ -195,7 +197,7 @@ public class RankingServiceImpl implements RankingService {
             logger.warn("GanadorId={} no corresponde a participanteAId={} ni participanteBId={}",
                     ganadorId, participanteAId, participanteBId);
 
-            throw new RankingException("El ganador no corresponde a los participantes indicados");
+            throw new RankingException("El ganador no corresponde a los participantes indicados", HttpStatus.UNPROCESSABLE_CONTENT);
         }
 
         Long perdedorId;
@@ -250,7 +252,7 @@ public class RankingServiceImpl implements RankingService {
 
         if (rankings.isEmpty()) {
             logger.warn("No existen registros de ranking para reiniciar torneoId={}", torneoId);
-            throw new RankingException("No existen registros de ranking para este torneo");
+            throw new RankingException("No existen registros de ranking para este torneo", HttpStatus.NOT_FOUND);
         }
 
         rankingRepository.deleteAll(rankings);
@@ -266,15 +268,22 @@ public class RankingServiceImpl implements RankingService {
 
             if (torneoDTO.getEstado().equalsIgnoreCase("CANCELADO")) {
                 logger.warn("No se puede crear ranking para torneo cancelado torneoId={}", torneoId);
-                throw new RankingException("No se puede crear ranking para un torneo cancelado");
+
+                throw new RankingException("No se puede crear ranking para un torneo cancelado", HttpStatus.CONFLICT);
             }
 
         } catch (RankingException ex) {
             throw ex;
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("TorneoId={} no encontrado en tournament-service", torneoId);
+
+            throw new RankingException("El torneo no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar torneoId={} desde tournament-service", torneoId);
-            throw new RankingException("El torneo no existe o no está disponible");
+
+            throw new RankingException("No se pudo validar el torneo desde tournament-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -289,22 +298,28 @@ public class RankingServiceImpl implements RankingService {
                 logger.warn("ParticipanteId={} no pertenece al torneoId={}",
                         participanteId, torneoId);
 
-                throw new RankingException("El participante no pertenece a este torneo");
+                throw new RankingException("El participante no pertenece a este torneo", HttpStatus.CONFLICT);
             }
 
             if (inscripcionDTO.getEstado().equalsIgnoreCase("CANCELADA")) {
                 logger.warn("ParticipanteId={} tiene inscripción cancelada", participanteId);
-                throw new RankingException("No se puede usar una inscripción cancelada en el ranking");
+
+                throw new RankingException("No se puede usar una inscripción cancelada en el ranking", HttpStatus.CONFLICT);
             }
 
         } catch (RankingException ex) {
             throw ex;
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("ParticipanteId={} no encontrado en registration-service", participanteId);
+
+            throw new RankingException("El participante no existe o no está inscrito", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar participanteId={} desde registration-service",
                     participanteId);
 
-            throw new RankingException("El participante no existe o no está inscrito");
+            throw new RankingException("No se pudo validar el participante desde registration-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -314,9 +329,15 @@ public class RankingServiceImpl implements RankingService {
 
             return resultadoClient.buscarResultadoPorId(resultadoId);
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("ResultadoId={} no encontrado en result-service", resultadoId);
+
+            throw new RankingException("El resultado no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar resultadoId={} desde result-service", resultadoId);
-            throw new RankingException("El resultado no existe o no está disponible");
+
+            throw new RankingException("No se pudo validar el resultado desde result-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -362,7 +383,7 @@ public class RankingServiceImpl implements RankingService {
     private Ranking obtenerRankingPorId(Long id) {
         return rankingRepository.findById(id).orElseThrow(() -> {
             logger.warn("Registro de ranking no encontrado id={}", id);
-            return new RankingException("Registro de ranking no encontrado");
+            return new RankingException("Registro de ranking no encontrado", HttpStatus.NOT_FOUND);
         });
     }
 

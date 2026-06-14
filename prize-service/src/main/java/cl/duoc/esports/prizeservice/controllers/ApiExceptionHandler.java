@@ -2,6 +2,7 @@ package cl.duoc.esports.prizeservice.controllers;
 
 import cl.duoc.esports.prizeservice.exceptions.PremioException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -33,7 +34,7 @@ public class ApiExceptionHandler {
 
         error.put("error", ex.getMessage());
 
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -44,6 +45,6 @@ public class ApiExceptionHandler {
 
         error.put("error", "No se puede duplicar el premio para el mismo participante, torneo y posición");
 
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 }

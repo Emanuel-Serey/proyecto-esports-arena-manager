@@ -8,6 +8,8 @@ import cl.duoc.esports.resultservice.models.Resultado;
 import cl.duoc.esports.resultservice.repositories.ResultadoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +43,7 @@ public class ResultadoServiceImpl implements ResultadoService {
             logger.warn("Intento de registrar resultado duplicado para partidaId={}",
                     resultadoDTO.getPartidaId());
 
-            throw new ResultadoException("La partida ya tiene un resultado registrado");
+            throw new ResultadoException("La partida ya tiene un resultado registrado", HttpStatus.CONFLICT);
         }
 
         Resultado resultado = new Resultado();
@@ -95,12 +97,12 @@ public class ResultadoServiceImpl implements ResultadoService {
 
         if (resultado.getEstadoValidacion().equalsIgnoreCase("VALIDADO")) {
             logger.warn("Intento de modificar resultado validado id={}", id);
-            throw new ResultadoException("No se puede modificar un resultado validado");
+            throw new ResultadoException("No se puede modificar un resultado validado", HttpStatus.CONFLICT);
         }
 
         if (resultado.getEstadoValidacion().equalsIgnoreCase("ANULADO")) {
             logger.warn("Intento de modificar resultado anulado id={}", id);
-            throw new ResultadoException("No se puede modificar un resultado anulado");
+            throw new ResultadoException("No se puede modificar un resultado anulado", HttpStatus.CONFLICT);
         }
 
         PartidaDTO partidaDTO = validarPartidaDisponible(resultado.getPartidaId());
@@ -128,7 +130,7 @@ public class ResultadoServiceImpl implements ResultadoService {
 
         if (resultado.getEstadoValidacion().equalsIgnoreCase("ANULADO")) {
             logger.warn("Intento de validar resultado anulado id={}", id);
-            throw new ResultadoException("No se puede validar un resultado anulado");
+            throw new ResultadoException("No se puede validar un resultado anulado", HttpStatus.CONFLICT);
         }
 
         resultado.setEstadoValidacion("VALIDADO");
@@ -150,7 +152,7 @@ public class ResultadoServiceImpl implements ResultadoService {
 
         if (justificacion == null || justificacion.isBlank()) {
             logger.warn("Intento de anular resultado id={} sin justificación", id);
-            throw new ResultadoException("Debe indicar una justificación para anular el resultado");
+            throw new ResultadoException("Debe indicar una justificación para anular el resultado", HttpStatus.BAD_REQUEST);
         }
 
         resultado.setEstadoValidacion("ANULADO");
@@ -174,7 +176,7 @@ public class ResultadoServiceImpl implements ResultadoService {
     private Resultado obtenerResultadoPorId(Long id) {
         return resultadoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Resultado no encontrado id={}", id);
-            return new ResultadoException("Resultado no encontrado");
+            return new ResultadoException("Resultado no encontrado", HttpStatus.NOT_FOUND);
         });
     }
 
@@ -186,7 +188,8 @@ public class ResultadoServiceImpl implements ResultadoService {
 
             if (partidaDTO.getEstado().equalsIgnoreCase("CANCELADA")) {
                 logger.warn("No se puede registrar resultado para partida cancelada partidaId={}", partidaId);
-                throw new ResultadoException("No se puede registrar resultado de una partida cancelada");
+
+                throw new ResultadoException("No se puede registrar resultado de una partida cancelada", HttpStatus.CONFLICT);
             }
 
             return partidaDTO;
@@ -194,9 +197,15 @@ public class ResultadoServiceImpl implements ResultadoService {
         } catch (ResultadoException ex) {
             throw ex;
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("PartidaId={} no encontrada en match-service", partidaId);
+
+            throw new ResultadoException("La partida no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar partidaId={} desde match-service", partidaId);
-            throw new ResultadoException("La partida no existe o no está disponible");
+
+            throw new ResultadoException("No se pudo validar la partida desde match-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -210,7 +219,7 @@ public class ResultadoServiceImpl implements ResultadoService {
             logger.warn("GanadorId={} no pertenece a la partidaId={}",
                     ganadorId, resultadoDTO.getPartidaId());
 
-            throw new ResultadoException("El ganador debe ser uno de los participantes de la partida");
+            throw new ResultadoException("El ganador debe ser uno de los participantes de la partida", HttpStatus.UNPROCESSABLE_CONTENT);
         }
     }
 

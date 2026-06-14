@@ -10,6 +10,8 @@ import cl.duoc.esports.prizeservice.models.Premio;
 import cl.duoc.esports.prizeservice.repositories.PremioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +56,7 @@ public class PremioServiceImpl implements PremioService {
                     premioDTO.getPosicion(),
                     rankingDTO.getPosicion());
 
-            throw new PremioException("La posición indicada no coincide con la posición del participante en el ranking");
+            throw new PremioException("La posición indicada no coincide con la posición del participante en el ranking", HttpStatus.UNPROCESSABLE_CONTENT);
         }
 
         if (premioRepository.existsByTorneoIdAndParticipanteIdAndPosicion(
@@ -67,7 +69,7 @@ public class PremioServiceImpl implements PremioService {
                     premioDTO.getParticipanteId(),
                     premioDTO.getPosicion());
 
-            throw new PremioException("El premio ya fue asignado a este participante en esta posición");
+            throw new PremioException("El premio ya fue asignado a este participante en esta posición", HttpStatus.CONFLICT);
         }
 
         Premio premio = new Premio();
@@ -159,7 +161,7 @@ public class PremioServiceImpl implements PremioService {
 
         if (premio.getEstadoEntrega().equalsIgnoreCase("ANULADO")) {
             logger.warn("Intento de entregar premio anulado id={}", id);
-            throw new PremioException("No se puede entregar un premio anulado");
+            throw new PremioException("No se puede entregar un premio anulado", HttpStatus.CONFLICT);
         }
 
         premio.setEstadoEntrega("ENTREGADO");
@@ -199,15 +201,22 @@ public class PremioServiceImpl implements PremioService {
 
             if (torneoDTO.getEstado().equalsIgnoreCase("CANCELADO")) {
                 logger.warn("No se puede asignar premio en torneo cancelado torneoId={}", torneoId);
-                throw new PremioException("No se puede asignar premio en un torneo cancelado");
+
+                throw new PremioException("No se puede asignar premio en un torneo cancelado", HttpStatus.CONFLICT);
             }
 
         } catch (PremioException ex) {
             throw ex;
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("TorneoId={} no encontrado en tournament-service", torneoId);
+
+            throw new PremioException("El torneo no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar torneoId={} desde tournament-service", torneoId);
-            throw new PremioException("El torneo no existe o no está disponible");
+
+            throw new PremioException("No se pudo validar el torneo desde tournament-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -218,18 +227,24 @@ public class PremioServiceImpl implements PremioService {
 
             return rankingClient.buscarRankingPorParticipante(torneoId, participanteId);
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("ParticipanteId={} no encontrado en ranking del torneoId={}",
+                    participanteId, torneoId);
+
+            throw new PremioException("El participante no existe en el ranking del torneo", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar participanteId={} en ranking del torneoId={} desde ranking-service",
                     participanteId, torneoId);
 
-            throw new PremioException("El participante no existe en el ranking del torneo");
+            throw new PremioException("No se pudo validar el ranking del participante desde ranking-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
     private Premio obtenerPremioPorId(Long id) {
         return premioRepository.findById(id).orElseThrow(() -> {
             logger.warn("Premio no encontrado id={}", id);
-            return new PremioException("Premio no encontrado");
+            return new PremioException("Premio no encontrado", HttpStatus.NOT_FOUND);
         });
     }
 

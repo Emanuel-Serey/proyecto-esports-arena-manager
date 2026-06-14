@@ -10,6 +10,8 @@ import cl.duoc.esports.matchservice.models.Partida;
 import cl.duoc.esports.matchservice.repositories.PartidaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -193,7 +195,7 @@ public class PartidaServiceImpl implements PartidaService {
     private Partida obtenerPartidaPorId(Long id) {
         return partidaRepository.findById(id).orElseThrow(() -> {
             logger.warn("Partida no encontrada id={}", id);
-            return new PartidaException("Partida no encontrada");
+            return new PartidaException("Partida no encontrada", HttpStatus.NOT_FOUND);
         });
     }
 
@@ -202,7 +204,7 @@ public class PartidaServiceImpl implements PartidaService {
             logger.warn("Intento de crear partida con el mismo participante participanteId={}",
                     partidaDTO.getParticipanteAId());
 
-            throw new PartidaException("No se puede crear una partida con el mismo participante");
+            throw new PartidaException("No se puede crear una partida con el mismo participante", HttpStatus.UNPROCESSABLE_CONTENT);
         }
     }
 
@@ -230,7 +232,7 @@ public class PartidaServiceImpl implements PartidaService {
                     partidaDTO.getParticipanteAId(),
                     partidaDTO.getParticipanteBId());
 
-            throw new PartidaException("Ya existe una partida entre estos participantes en la misma ronda");
+            throw new PartidaException("Ya existe una partida entre estos participantes en la misma ronda", HttpStatus.CONFLICT);
         }
     }
 
@@ -242,19 +244,28 @@ public class PartidaServiceImpl implements PartidaService {
 
             if (torneoDTO.getEstado().equalsIgnoreCase("CANCELADO")) {
                 logger.warn("No se puede crear partida en torneo cancelado torneoId={}", torneoId);
-                throw new PartidaException("No se puede crear una partida en un torneo cancelado");
+
+                throw new PartidaException("No se puede crear una partida en un torneo cancelado", HttpStatus.CONFLICT);
             }
 
             if (torneoDTO.getEstado().equalsIgnoreCase("CERRADO")) {
                 logger.warn("No se puede crear partida en torneo cerrado torneoId={}", torneoId);
-                throw new PartidaException("No se puede crear una partida en un torneo cerrado");
+
+                throw new PartidaException("No se puede crear una partida en un torneo cerrado", HttpStatus.CONFLICT);
             }
 
         } catch (PartidaException ex) {
             throw ex;
+
+        } catch (FeignException.NotFound ex) {
+            logger.warn("TorneoId={} no encontrado en tournament-service", torneoId);
+
+            throw new PartidaException("El torneo no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar torneoId={} desde tournament-service", torneoId);
-            throw new PartidaException("El torneo no existe o no está disponible");
+
+            throw new PartidaException("No se pudo validar el torneo desde tournament-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -269,21 +280,28 @@ public class PartidaServiceImpl implements PartidaService {
                 logger.warn("Participante inscripcionId={} no pertenece al torneoId={}",
                         inscripcionId, torneoId);
 
-                throw new PartidaException("El participante no está inscrito en este torneo");
+                throw new PartidaException("El participante no está inscrito en este torneo", HttpStatus.CONFLICT);
             }
 
             if (inscripcionDTO.getEstado().equalsIgnoreCase("CANCELADA")) {
                 logger.warn("Participante inscripcionId={} tiene inscripción cancelada", inscripcionId);
-                throw new PartidaException("No se puede crear una partida con una inscripción cancelada");
+
+                throw new PartidaException("No se puede crear una partida con una inscripción cancelada", HttpStatus.CONFLICT);
             }
 
         } catch (PartidaException ex) {
             throw ex;
+
+        } catch (FeignException.NotFound ex) {
+            logger.warn("InscripcionId={} no encontrada en registration-service", inscripcionId);
+
+            throw new PartidaException("El participante no existe o no está inscrito", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar participante inscripcionId={} desde registration-service",
                     inscripcionId);
 
-            throw new PartidaException("El participante no existe o no está inscrito");
+            throw new PartidaException("No se pudo validar el participante desde registration-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 

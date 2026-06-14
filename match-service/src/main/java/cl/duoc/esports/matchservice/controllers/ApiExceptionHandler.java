@@ -32,6 +32,6 @@ public class ApiExceptionHandler {
 
         error.put("error", ex.getMessage());
 
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.status(ex.getStatus()).body(error);
     }
 }
