@@ -13,6 +13,8 @@ import cl.duoc.esports.teamservice.models.MiembroEquipo;
 import cl.duoc.esports.teamservice.repositories.EquipoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,14 +49,14 @@ public class EquipoServiceImpl implements EquipoService {
 
         if (equipoRepository.existsByNombre(equipoDTO.getNombre())) {
             logger.warn("Intento de crear equipo duplicado nombre={}", equipoDTO.getNombre());
-            throw new EquipoException("Ya existe un equipo con ese nombre");
+            throw new EquipoException("Ya existe un equipo con ese nombre", HttpStatus.CONFLICT);
         }
 
         validarJuegoActivo(equipoDTO.getJuegoPrincipalId());
 
         if (equipoDTO.getMiembros() == null || equipoDTO.getMiembros().isEmpty()) {
             logger.warn("Intento de crear equipo sin miembros nombre={}", equipoDTO.getNombre());
-            throw new EquipoException("El equipo debe tener al menos un miembro");
+            throw new EquipoException("El equipo debe tener al menos un miembro", HttpStatus.UNPROCESSABLE_CONTENT);
         }
 
         validarUsuarioActivo(equipoDTO.getCapitanId());
@@ -125,7 +127,7 @@ public class EquipoServiceImpl implements EquipoService {
             logger.warn("Intento de actualizar equipo id={} con nombre duplicado={}",
                     id, equipoDTO.getNombre());
 
-            throw new EquipoException("Ya existe un equipo con ese nombre");
+            throw new EquipoException("Ya existe un equipo con ese nombre", HttpStatus.CONFLICT);
         }
 
 
@@ -136,7 +138,7 @@ public class EquipoServiceImpl implements EquipoService {
             logger.warn("Capitán id={} no está incluido como miembro del equipo id={}",
                     equipoDTO.getCapitanId(), id);
 
-            throw new EquipoException("El capitán debe estar incluido como miembro del equipo");
+            throw new EquipoException("El capitán debe estar incluido como miembro del equipo", HttpStatus.UNPROCESSABLE_CONTENT);
         }
 
         equipo.setNombre(equipoDTO.getNombre());
@@ -215,12 +217,12 @@ public class EquipoServiceImpl implements EquipoService {
             logger.warn("Intento de agregar miembro duplicado usuarioId={} al equipo id={}",
                     miembroDTO.getUsuarioId(), equipoId);
 
-            throw new EquipoException("El usuario ya pertenece al equipo");
+            throw new EquipoException("El usuario ya pertenece al equipo", HttpStatus.CONFLICT);
         }
 
         if (miembroEquipoRepository.existsByUsuarioIdAndEquipo_Estado(miembroDTO.getUsuarioId(), "ACTIVO")) {
             logger.warn("UsuarioId={} ya pertenece a otro equipo activo", miembroDTO.getUsuarioId());
-            throw new EquipoException("El usuario ya pertenece a otro equipo activo");
+            throw new EquipoException("El usuario ya pertenece a otro equipo activo", HttpStatus.CONFLICT);
         }
 
         MiembroEquipo miembro = new MiembroEquipo();
@@ -237,7 +239,7 @@ public class EquipoServiceImpl implements EquipoService {
                 .stream()
                 .filter(m -> m.getUsuarioId().equals(miembroDTO.getUsuarioId()))
                 .findFirst()
-                .orElseThrow(() -> new EquipoException("No se pudo agregar el miembro al equipo"));
+                .orElseThrow(() -> new EquipoException("No se pudo agregar el miembro al equipo", HttpStatus.INTERNAL_SERVER_ERROR));
 
         logger.info("Miembro usuarioId={} agregado correctamente al equipo id={}",
                 miembroDTO.getUsuarioId(), equipoId);
@@ -273,14 +275,14 @@ public class EquipoServiceImpl implements EquipoService {
                 .findFirst()
                 .orElseThrow(() -> {
                     logger.warn("Miembro id={} no encontrado en equipo id={}", miembroId, equipoId);
-                    return new EquipoException("Miembro no encontrado en el equipo");
+                    return new EquipoException("Miembro no encontrado en el equipo", HttpStatus.NOT_FOUND);
                 });
 
         if (miembro.getUsuarioId().equals(equipo.getCapitanId())) {
             logger.warn("Intento de eliminar capitán usuarioId={} del equipo id={}",
                     miembro.getUsuarioId(), equipoId);
 
-            throw new EquipoException("No se puede eliminar al capitán del equipo");
+            throw new EquipoException("No se puede eliminar al capitán del equipo", HttpStatus.UNPROCESSABLE_CONTENT);
         }
 
         equipo.getMiembros().remove(miembro);
@@ -292,7 +294,7 @@ public class EquipoServiceImpl implements EquipoService {
     private Equipo obtenerEquipoPorId(Long id) {
         return equipoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Equipo no encontrado id={}", id);
-            return new EquipoException("Equipo no encontrado");
+            return new EquipoException("Equipo no encontrado", HttpStatus.NOT_FOUND);
         });
     }
 
@@ -304,15 +306,19 @@ public class EquipoServiceImpl implements EquipoService {
 
             if (juegoDTO.getEstado() == null || !juegoDTO.getEstado()) {
                 logger.warn("JuegoPrincipalId={} no está activo", juegoId);
-                throw new EquipoException("El juego principal no está activo");
+                throw new EquipoException("El juego principal no está activo", HttpStatus.CONFLICT);
             }
 
         } catch (EquipoException ex) {
             throw ex;
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("JuegoPrincipalId={} no encontrado en game-service", juegoId);
+            throw new EquipoException("El juego principal no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar juegoPrincipalId={} desde game-service", juegoId);
-            throw new EquipoException("El juego principal no existe o no está disponible");
+            throw new EquipoException("No se pudo validar el juego principal desde game-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -322,7 +328,7 @@ public class EquipoServiceImpl implements EquipoService {
 
         if (!existeCapitan) {
             logger.warn("El capitán id={} no está incluido como miembro del equipo", capitanId);
-            throw new EquipoException("El capitán debe estar incluido como miembro del equipo");
+            throw new EquipoException("El capitán debe estar incluido como miembro del equipo", HttpStatus.UNPROCESSABLE_CONTENT);
         }
     }
 
@@ -332,7 +338,7 @@ public class EquipoServiceImpl implements EquipoService {
         for (MiembroEquipoDTO miembro : miembros) {
             if (!usuarios.add(miembro.getUsuarioId())) {
                 logger.warn("Usuario duplicado dentro del equipo usuarioId={}", miembro.getUsuarioId());
-                throw new EquipoException("No se puede repetir un usuario dentro del mismo equipo");
+                throw new EquipoException("No se puede repetir un usuario dentro del mismo equipo", HttpStatus.CONFLICT);
             }
         }
     }
@@ -351,15 +357,19 @@ public class EquipoServiceImpl implements EquipoService {
 
             if (usuarioDTO.getEstado() == null || !usuarioDTO.getEstado().equalsIgnoreCase("ACTIVO")) {
                 logger.warn("UsuarioId={} no está activo", usuarioId);
-                throw new EquipoException("El usuario no está activo");
+                throw new EquipoException("El usuario no está activo", HttpStatus.CONFLICT);
             }
 
         } catch (EquipoException ex) {
             throw ex;
 
+        } catch (FeignException.NotFound ex) {
+            logger.warn("UsuarioId={} no encontrado en user-service", usuarioId);
+            throw new EquipoException("El usuario no existe", HttpStatus.NOT_FOUND);
+
         } catch (Exception ex) {
             logger.error("No se pudo validar usuarioId={} desde user-service", usuarioId);
-            throw new EquipoException("El usuario no existe o no está disponible");
+            throw new EquipoException("No se pudo validar el usuario desde user-service", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -373,7 +383,7 @@ public class EquipoServiceImpl implements EquipoService {
         for (MiembroEquipoDTO miembro : miembros) {
             if (miembroEquipoRepository.existsByUsuarioIdAndEquipo_Estado(miembro.getUsuarioId(), "ACTIVO")) {
                 logger.warn("UsuarioId={} ya pertenece a otro equipo activo", miembro.getUsuarioId());
-                throw new EquipoException("El usuario ya pertenece a otro equipo activo");
+                throw new EquipoException("El usuario ya pertenece a otro equipo activo", HttpStatus.CONFLICT);
             }
         }
     }
