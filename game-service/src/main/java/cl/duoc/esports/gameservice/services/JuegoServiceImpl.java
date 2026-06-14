@@ -2,6 +2,7 @@ package cl.duoc.esports.gameservice.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import cl.duoc.esports.gameservice.dto.JuegoDTO;
 import cl.duoc.esports.gameservice.exceptions.JuegoException;
 import cl.duoc.esports.gameservice.models.Juego;
@@ -28,7 +29,7 @@ public class JuegoServiceImpl implements JuegoService {
 
         if (juegoRepository.existsByNombre(juegoDTO.getNombre())) {
             logger.warn("Intento de crear juego duplicado con nombre={}", juegoDTO.getNombre());
-            throw new JuegoException("Ya existe un juego con ese nombre");
+            throw new JuegoException("Ya existe un juego con ese nombre", HttpStatus.CONFLICT);
         }
 
         Juego juego = new Juego();
@@ -71,7 +72,7 @@ public class JuegoServiceImpl implements JuegoService {
 
         Juego juego = juegoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Juego no encontrado id={}", id);
-            return new JuegoException("Juego no encontrado");
+            return new JuegoException("Juego no encontrado", HttpStatus.NOT_FOUND);
         });
 
         return convertirADTO(juego);
@@ -85,7 +86,7 @@ public class JuegoServiceImpl implements JuegoService {
 
         Juego juego = juegoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Juego no encontrado para actualizar. id={}", id);
-            return new JuegoException("Juego no encontrado");
+            return new JuegoException("Juego no encontrado", HttpStatus.NOT_FOUND);
         });
 
         juego.setNombre(juegoDTO.getNombre());
@@ -108,7 +109,7 @@ public class JuegoServiceImpl implements JuegoService {
 
         Juego juego = juegoRepository.findById(id).orElseThrow(() -> {
             logger.warn("Juego no encontrado para desactivar. id={}", id);
-            return new JuegoException("Juego no encontrado");
+            return new JuegoException("Juego no encontrado", HttpStatus.NOT_FOUND);
         });
 
         juego.setEstado(false);
