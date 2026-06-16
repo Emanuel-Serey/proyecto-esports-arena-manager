@@ -1,5 +1,6 @@
 package cl.duoc.esports.prizeservice.controllers;
 
+import cl.duoc.esports.prizeservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.prizeservice.exceptions.PremioException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -29,21 +30,19 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(PremioException.class)
-    public ResponseEntity<Map<String, String>> handlePremioException(PremioException ex) {
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handlePremioException(PremioException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, String>> handleDataIntegrityViolationException(
+    public ResponseEntity<ErrorResponseDTO> handleDataIntegrityViolationException(
             DataIntegrityViolationException ex) {
 
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", "No se puede duplicar el premio para el mismo participante, torneo y posición");
+        ErrorResponseDTO error = new ErrorResponseDTO(
+                "No se puede duplicar el premio para el mismo participante, torneo y posición"
+        );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
