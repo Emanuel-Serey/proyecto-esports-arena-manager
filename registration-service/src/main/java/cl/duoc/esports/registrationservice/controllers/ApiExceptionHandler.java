@@ -1,5 +1,6 @@
 package cl.duoc.esports.registrationservice.controllers;
 
+import cl.duoc.esports.registrationservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.registrationservice.exceptions.InscripcionException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,10 +28,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(InscripcionException.class)
-    public ResponseEntity<Map<String, String>> handleInscripcionException(InscripcionException ex) {
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handleInscripcionException(InscripcionException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
