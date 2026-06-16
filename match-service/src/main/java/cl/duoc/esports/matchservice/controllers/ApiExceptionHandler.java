@@ -1,5 +1,6 @@
 package cl.duoc.esports.matchservice.controllers;
 
+import cl.duoc.esports.matchservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.matchservice.exceptions.PartidaException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,10 +28,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(PartidaException.class)
-    public ResponseEntity<Map<String, String>> handlePartidaException(PartidaException ex) {
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handlePartidaException(PartidaException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
