@@ -1,5 +1,6 @@
 package cl.duoc.esports.tournamentservice.controllers;
 
+import cl.duoc.esports.tournamentservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.tournamentservice.exceptions.TorneoException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,9 +28,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(TorneoException.class)
-    public ResponseEntity<Map<String, String>> handleTorneoException(TorneoException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handleTorneoException(TorneoException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
