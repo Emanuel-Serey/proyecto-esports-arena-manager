@@ -1,8 +1,8 @@
 package cl.duoc.esports.rankingservice.controllers;
 
+import cl.duoc.esports.rankingservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.rankingservice.exceptions.RankingException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,10 +29,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(RankingException.class)
-    public ResponseEntity<Map<String, String>> handleRankingException(RankingException ex) {
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handleRankingException(RankingException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
@@ -45,6 +43,6 @@ public class ApiExceptionHandler {
 
         error.put("error", "No se puede duplicar un participante en el ranking del mismo torneo");
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        return ResponseEntity.badRequest().body(error);
     }
 }
