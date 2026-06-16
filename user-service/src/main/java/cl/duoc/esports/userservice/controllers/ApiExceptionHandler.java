@@ -1,5 +1,6 @@
 package cl.duoc.esports.userservice.controllers;
 
+import cl.duoc.esports.userservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.userservice.exceptions.UsuarioException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,10 +28,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(UsuarioException.class)
-    public ResponseEntity<Map<String, String>> handleUsuarioException(UsuarioException ex) {
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handleUsuarioException(UsuarioException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
