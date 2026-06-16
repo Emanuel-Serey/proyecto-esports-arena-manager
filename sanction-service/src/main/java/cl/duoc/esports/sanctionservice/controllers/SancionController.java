@@ -1,5 +1,14 @@
 package cl.duoc.esports.sanctionservice.controllers;
 
+import cl.duoc.esports.sanctionservice.dto.ErrorResponseDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import cl.duoc.esports.sanctionservice.dto.SancionDTO;
 import cl.duoc.esports.sanctionservice.services.SancionService;
 import jakarta.validation.Valid;
