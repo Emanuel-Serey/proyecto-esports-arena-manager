@@ -1,4 +1,5 @@
 package cl.duoc.esports.gameservice.controllers;
+import cl.duoc.esports.gameservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.gameservice.exceptions.JuegoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +28,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(JuegoException.class)
-    public ResponseEntity<Map<String, String>> handleJuegoException(JuegoException ex) {
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handleJuegoException(JuegoException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
