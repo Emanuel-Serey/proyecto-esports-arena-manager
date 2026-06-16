@@ -1,5 +1,6 @@
 package cl.duoc.esports.resultservice.controllers;
 
+import cl.duoc.esports.resultservice.dto.ErrorResponseDTO;
 import cl.duoc.esports.resultservice.exceptions.ResultadoException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,10 +28,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(ResultadoException.class)
-    public ResponseEntity<Map<String, String>> handleResultadoException(ResultadoException ex) {
-        Map<String, String> error = new HashMap<>();
-
-        error.put("error", ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handleResultadoException(ResultadoException ex) {
+        ErrorResponseDTO error = new ErrorResponseDTO(ex.getMessage());
 
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
