@@ -8,7 +8,7 @@ El sistema permite administrar una plataforma de torneos eSports, considerando l
 
 ## Informe del proyecto
 
-El informe técnico del proyecto se encuentra disponible en el siguiente archivo:
+El informe técnico de la Evaluación 2 del proyecto se encuentra disponible en el siguiente archivo:
 
 [Descargar informe PDF](Informe_eSports_Arena_Manager.pdf)
 

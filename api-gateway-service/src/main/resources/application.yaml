@@ -60,6 +60,11 @@ spring:
               predicates:
                 - Path=/api/premios/**,/api/v2/premios/**
 
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+
 eureka:
   client:
     service-url:
@@ -68,3 +73,6 @@ eureka:
     prefer-ip-address: true
     hostname: localhost
     instance-id: ${spring.application.name}:${server.port}
+
+jwt:
+  secret: clave-secreta-super-segura-para-jwt-esports-arena-manager-2026
