@@ -563,19 +563,19 @@ Las pruebas consideran:
 
 Resumen de pruebas ejecutadas:
 
-| Microservicio | Pruebas ejecutadas |
-|---|---:|
-| user-service | 13 |
-| game-service | 8 |
-| tournament-service | 14 |
-| team-service | 20 |
-| registration-service | 24 |
-| sanction-service | 20 |
-| match-service | 20 |
-| result-service | 16 |
-| ranking-service | 17 |
-| prize-service | 16 |
-| **Total** | **168** |
+| Microservicio        | Clase de prueba             | Pruebas ejecutadas | Métodos o funcionalidades evaluadas                                                                                              |
+| -------------------- | --------------------------- | -----------------: | -------------------------------------------------------------------------------------------------------------------------------- |
+| user-service         | UserServiceImplTest         |                 13 | Crear usuario, listar usuarios, buscar por ID, actualizar, desactivar, validar nickname y email duplicado                        |
+| game-service         | GameServiceImplTest         |                  8 | Crear juego, listar juegos, buscar por ID, actualizar y desactivar juego                                                         |
+| tournament-service   | TournamentServiceImplTest   |                 14 | Crear torneo, validar juego, listar torneos, buscar por ID, actualizar, cancelar y cerrar torneo                                 |
+| team-service         | TeamServiceImplTest         |                 20 | Crear equipo, validar usuario, validar juego, agregar miembro, listar miembros y eliminar miembro                                |
+| registration-service | RegistrationServiceImplTest |                 24 | Crear inscripción, validar torneo, validar equipo, validar usuario, validar sanciones, cancelar inscripción y listar por filtros |
+| sanction-service     | SanctionServiceImplTest     |                 20 | Crear sanción, buscar por ID, listar sanciones, cerrar sanción y validar sanciones activas                                       |
+| match-service        | MatchServiceImplTest        |                 20 | Crear partida, validar torneo, validar participantes, actualizar estado, cancelar partida y listar por torneo                    |
+| result-service       | ResultServiceImplTest       |                 16 | Crear resultado, buscar por ID, validar resultado, anular resultado y buscar por partida                                         |
+| ranking-service      | RankingServiceImplTest      |                 17 | Crear ranking, buscar por torneo, actualizar ranking por resultado y reiniciar ranking                                           |
+| prize-service        | PrizeServiceImplTest        |                 16 | Asignar premio, buscar por ID, listar por torneo, listar por participante, entregar premio y anular premio                       |
+
 
 ---
 
