@@ -1,0 +1,70 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway-service
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/api/usuarios/**,/api/v2/usuarios/**
+
+            - id: game-service
+              uri: lb://game-service
+              predicates:
+                - Path=/api/juegos/**,/api/v2/juegos/**
+
+            - id: tournament-service
+              uri: lb://tournament-service
+              predicates:
+                - Path=/api/torneos/**,/api/v2/torneos/**
+
+            - id: team-service
+              uri: lb://team-service
+              predicates:
+                - Path=/api/equipos/**,/api/v2/equipos/**
+
+            - id: registration-service
+              uri: lb://registration-service
+              predicates:
+                - Path=/api/inscripciones/**,/api/v2/inscripciones/**
+
+            - id: sanction-service
+              uri: lb://sanction-service
+              predicates:
+                - Path=/api/sanciones/**,/api/v2/sanciones/**
+
+            - id: match-service
+              uri: lb://match-service
+              predicates:
+                - Path=/api/partidas/**,/api/v2/partidas/**
+
+            - id: result-service
+              uri: lb://result-service
+              predicates:
+                - Path=/api/resultados/**,/api/v2/resultados/**
+
+            - id: ranking-service
+              uri: lb://ranking-service
+              predicates:
+                - Path=/api/rankings/**,/api/v2/rankings/**
+
+            - id: prize-service
+              uri: lb://prize-service
+              predicates:
+                - Path=/api/premios/**,/api/v2/premios/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
