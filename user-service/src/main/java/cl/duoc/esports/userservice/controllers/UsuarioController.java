@@ -129,6 +129,30 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.listarPorRol(rol));
     }
 
+    @GetMapping("/email/{email}")
+    @Operation(
+            summary = "Buscar usuario por email",
+            description = "Obtiene un usuario registrado mediante su correo electrónico"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente"),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Usuario no encontrado",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponseDTO.class),
+                            examples = @ExampleObject(value = "{\"error\":\"Usuario no encontrado\"}")
+                    )
+            )
+    })
+    public ResponseEntity<UsuarioDTO> buscarPorEmail(
+            @Parameter(description = "Email del usuario", example = "admin@gmail.com")
+            @PathVariable String email
+    ) {
+        return ResponseEntity.ok(usuarioService.buscarPorEmail(email));
+    }
+
     @GetMapping("/estado/{estado}")
     @Operation(
             summary = "Listar usuarios por estado",

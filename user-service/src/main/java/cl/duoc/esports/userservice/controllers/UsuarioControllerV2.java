@@ -12,6 +12,8 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,6 +99,14 @@ public class UsuarioControllerV2 {
         );
 
         return ResponseEntity.ok(collectionModel);
+    }
+
+    @GetMapping("/email/{email}")
+    @Operation(summary = "Buscar usuario por email con HATEOAS")
+    public ResponseEntity<EntityModel<UsuarioDTO>> buscarPorEmail(@PathVariable String email) {
+        UsuarioDTO usuarioDTO = usuarioService.buscarPorEmail(email);
+
+        return ResponseEntity.ok(usuarioModelAssembler.toModel(usuarioDTO));
     }
 
     @GetMapping("/estado/{estado}")

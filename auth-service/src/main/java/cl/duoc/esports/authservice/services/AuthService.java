@@ -1,5 +1,6 @@
 package cl.duoc.esports.authservice.services;
 
+import cl.duoc.esports.authservice.clients.UsuarioClient;
 import cl.duoc.esports.authservice.dto.*;
 import cl.duoc.esports.authservice.exceptions.AuthException;
 import cl.duoc.esports.authservice.models.CuentaAcceso;
@@ -21,11 +22,37 @@ public class AuthService {
     private final CuentaAccesoRepository cuentaAccesoRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UsuarioClient usuarioClient;
 
     public CuentaAccesoResponse crearCuenta(CrearCuentaRequest request) {
 
         if (cuentaAccesoRepository.existsByEmail(request.getEmail())) {
             throw new AuthException("Ya existe una cuenta con ese email", HttpStatus.CONFLICT);
+        }
+
+        UsuarioAuthResponse usuario;
+
+        try {
+            usuario = usuarioClient.buscarUsuarioPorEmail(request.getEmail());
+        } catch (Exception ex) {
+            throw new AuthException(
+                    "No existe un usuario asociado a ese email en user-service",
+                    HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (!"ACTIVO".equalsIgnoreCase(usuario.getEstado())) {
+            throw new AuthException(
+                    "El usuario asociado no se encuentra activo",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        if (!usuario.getRol().equalsIgnoreCase(request.getRol().name())) {
+            throw new AuthException(
+                    "El rol de la cuenta no coincide con el rol registrado en user-service",
+                    HttpStatus.CONFLICT
+            );
         }
 
         CuentaAcceso cuenta = CuentaAcceso.builder()

@@ -36,6 +36,12 @@ public class UsuarioModelAssembler implements RepresentationModelAssembler<Usuar
                     .withRel("usuarios-por-estado"));
         }
 
+        if (usuarioDTO.getEmail() != null) {
+            usuarioModel.add(linkTo(methodOn(UsuarioControllerV2.class)
+                    .buscarPorEmail(usuarioDTO.getEmail()))
+                    .withRel("usuario-por-email"));
+        }
+
         return usuarioModel;
     }
 }

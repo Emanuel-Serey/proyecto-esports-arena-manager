@@ -6,6 +6,8 @@ import java.util.List;
 
 public interface UsuarioService {
 
+    UsuarioDTO buscarPorEmail(String email);
+
     UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO);
 
     List<UsuarioDTO> listarUsuarios();

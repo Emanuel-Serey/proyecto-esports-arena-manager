@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -168,6 +169,15 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .stream()
                 .map(this::convertirADTO)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public UsuarioDTO buscarPorEmail(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new UsuarioException("Usuario no encontrado", HttpStatus.NOT_FOUND));
+
+        return convertirADTO(usuario);
     }
 
     private Usuario obtenerUsuarioPorId(Long id) {
