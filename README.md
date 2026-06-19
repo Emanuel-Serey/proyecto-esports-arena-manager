@@ -663,17 +663,18 @@ mvn spring-boot:run
 
 ```text
 1. eureka-service
-2. user-service
-3. game-service
-4. tournament-service
-5. team-service
-6. sanction-service
-7. registration-service
-8. match-service
-9. result-service
-10. ranking-service
-11. prize-service
-12. api-gateway-service
+2. auth-service
+3. user-service
+4. game-service
+5. tournament-service
+6. team-service
+7. sanction-service
+8. registration-service
+9. match-service
+10. result-service
+11. ranking-service
+12. prize-service
+13. api-gateway-service
 ```
 
 ### 5. Verificación local
@@ -733,6 +734,7 @@ prize-service
 swagger-openapi
 pruebas-unitarias
 gateway-eureka
+auth-service
 ```
 
 ### Evidencia de planificación en Trello
