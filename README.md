@@ -750,3 +750,4 @@ El proyecto se encuentra disponible en GitHub:
 ```text
 https://github.com/Emanuel-Serey/proyecto-esports-arena-manager
 ```
+

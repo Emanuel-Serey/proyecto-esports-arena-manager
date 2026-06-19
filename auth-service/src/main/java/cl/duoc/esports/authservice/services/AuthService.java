@@ -80,6 +80,22 @@ public class AuthService {
             throw new AuthException("Credenciales inválidas", HttpStatus.UNAUTHORIZED);
         }
 
+        UsuarioAuthResponse usuario;
+
+        try {
+            usuario = usuarioClient.buscarUsuarioPorEmail(cuenta.getEmail());
+        } catch (Exception ex) {
+            throw new AuthException("No existe un usuario asociado a ese email en user-service", HttpStatus.NOT_FOUND);
+        }
+
+        if (!"ACTIVO".equalsIgnoreCase(usuario.getEstado())) {
+            throw new AuthException("El usuario asociado no se encuentra activo en user-service", HttpStatus.FORBIDDEN);
+        }
+
+        if (!usuario.getRol().equalsIgnoreCase(cuenta.getRol().name())) {
+            throw new AuthException("El rol de la cuenta no coincide con el rol registrado en user-service", HttpStatus.CONFLICT);
+        }
+
         String token = jwtService.generarToken(cuenta);
 
         return new AuthResponse(
