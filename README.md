@@ -741,7 +741,9 @@ auth-service
 
 También se utilizó Trello para organizar las tareas del equipo, dividiendo el trabajo entre tareas pendientes, en proceso y completadas.
 
-![Evidencia tablero Trello](docs/img/evidencias/Tareas-trello.png)
+```text
+https://trello.com/b/BsOscoHj/proyecto-esports-arena-manager
+```
 
 ---
 
@@ -753,3 +755,8 @@ El proyecto se encuentra disponible en GitHub:
 https://github.com/Emanuel-Serey/proyecto-esports-arena-manager
 ```
 
+| Rol             | Puede hacer                                                                                                           | No puede hacer                                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **ADMIN**       | Administrar usuarios, cuentas de acceso, juegos, sanciones, torneos, rankings, premios y gestión general del sistema. | No tiene restricciones principales dentro del sistema.                                                         |
+| **ORGANIZADOR** | Crear y actualizar torneos, gestionar equipos, inscripciones, partidas, resultados, rankings y premios.               | No puede administrar usuarios, cuentas de acceso, sanciones ni eliminar torneos o rankings.                    |
+| **JUGADOR**     | Consultar juegos, torneos, equipos y rankings. También puede crear equipos e inscripciones.                           | No puede administrar usuarios, cuentas de acceso, juegos, torneos, sanciones, partidas, resultados ni premios. |
