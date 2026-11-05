@@ -119,7 +119,7 @@ public class SecurityConfig {
 
                         // Autenticación
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/cuentas").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/registro").permitAll()
 
                         // Swagger
                         .requestMatchers(

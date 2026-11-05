@@ -157,4 +157,20 @@ public class AuthController {
     ) {
         return ResponseEntity.ok(authService.desactivarCuenta(id));
     }
+
+    @PostMapping("/registro")
+    @Operation(
+            summary = "Registrar jugador",
+            description = "Registra un nuevo jugador y devuelve un token JWT."
+    )
+    public ResponseEntity<AuthResponse> registrar(
+            @Valid @RequestBody RegistroRequest request
+    ) {
+        AuthResponse response =
+                authService.registrar(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
 }

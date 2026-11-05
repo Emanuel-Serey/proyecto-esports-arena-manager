@@ -67,10 +67,14 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios/registro").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/usuarios/email/**").permitAll()
 
-                        .requestMatchers("/api/usuarios/**", "/api/v2/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers(
+                                "/api/usuarios/**",
+                                "/api/v2/usuarios/**"
+                        ).hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

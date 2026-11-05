@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import cl.duoc.esports.userservice.dto.RegistroUsuarioDTO;
 import java.util.List;
 
 @RestController
@@ -181,5 +181,28 @@ public class UsuarioController {
             @PathVariable String nickname) {
 
         return ResponseEntity.ok(usuarioService.buscarPorNickname(nickname));
+    }
+    @PostMapping("/registro")
+    @Operation(
+            summary = "Registrar jugador",
+            description = "Registra un nuevo usuario asignando automáticamente el rol JUGADOR."
+    )
+
+    public ResponseEntity<UsuarioDTO> registrarJugador(
+            @Valid @RequestBody RegistroUsuarioDTO request
+    ) {
+        UsuarioDTO usuario = new UsuarioDTO();
+
+        usuario.setNombre(request.getNombre());
+        usuario.setNickname(request.getNickname());
+        usuario.setEmail(request.getEmail());
+        usuario.setRol("JUGADOR");
+
+        UsuarioDTO nuevoUsuario =
+                usuarioService.crearUsuario(usuario);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(nuevoUsuario);
     }
 }

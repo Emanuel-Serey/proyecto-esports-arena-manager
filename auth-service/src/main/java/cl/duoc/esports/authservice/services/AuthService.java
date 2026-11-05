@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import feign.FeignException;
 import java.util.List;
 
 @Service
@@ -65,6 +65,64 @@ public class AuthService {
         CuentaAcceso cuentaGuardada = cuentaAccesoRepository.save(cuenta);
 
         return convertirAResponse(cuentaGuardada);
+    }
+
+    public AuthResponse registrar(RegistroRequest request) {
+
+        if (cuentaAccesoRepository.existsByEmail(request.getEmail())) {
+            throw new AuthException(
+                    "Ya existe una cuenta con ese email",
+                    HttpStatus.CONFLICT
+            );
+        }
+
+        RegistroUsuarioRequest usuarioRequest =
+                new RegistroUsuarioRequest(
+                        request.getNombre(),
+                        request.getNickname(),
+                        request.getEmail()
+                );
+
+        try {
+            usuarioClient.registrarUsuario(usuarioRequest);
+        } catch (FeignException ex) {
+
+            if (ex.status() == 409) {
+                throw new AuthException(
+                        "El email o nickname ya está registrado",
+                        HttpStatus.CONFLICT
+                );
+            }
+
+            throw new AuthException(
+                    "No se pudo registrar el usuario",
+                    HttpStatus.BAD_GATEWAY
+            );
+        }
+
+        CuentaAcceso cuenta = CuentaAcceso.builder()
+                .email(request.getEmail())
+                .passwordHash(
+                        passwordEncoder.encode(
+                                request.getPassword()
+                        )
+                )
+                .rol(Rol.JUGADOR)
+                .estado(EstadoCuenta.ACTIVO)
+                .build();
+
+        CuentaAcceso cuentaGuardada =
+                cuentaAccesoRepository.save(cuenta);
+
+        String token =
+                jwtService.generarToken(cuentaGuardada);
+
+        return new AuthResponse(
+                token,
+                "Bearer",
+                cuentaGuardada.getEmail(),
+                cuentaGuardada.getRol()
+        );
     }
 
     public AuthResponse login(LoginRequest request) {
