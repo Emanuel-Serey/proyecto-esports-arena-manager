@@ -114,14 +114,14 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
 
-                        // Peticiones previas de CORS
+                        // CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Endpoints públicos de autenticación
+                        // Autenticación
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/cuentas").permitAll()
 
-                        // Swagger y documentación
+                        // Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -129,82 +129,126 @@ public class SecurityConfig {
                                 "/api-docs/**"
                         ).permitAll()
 
-                        // Gestión de cuentas de acceso: solo ADMIN
+                        // Cuentas de acceso: solo ADMIN
                         .requestMatchers("/api/auth/cuentas/**").hasRole("ADMIN")
 
-                        // Usuarios: solo ADMIN
+                        // Usuarios: por ahora solo ADMIN.
+                        // Más adelante crearemos acceso al perfil propio.
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/v2/usuarios/**").hasRole("ADMIN")
 
-                        // Juegos
-                        .requestMatchers(HttpMethod.GET, "/api/juegos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
-                        .requestMatchers(HttpMethod.GET, "/api/v2/juegos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
+                        // JUEGOS
+                        // Los visitantes pueden consultar los juegos disponibles.
+                        .requestMatchers(HttpMethod.GET, "/api/juegos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/juegos/**").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/juegos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/juegos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/juegos/**").hasRole("ADMIN")
 
-                        // Torneos
-                        .requestMatchers(HttpMethod.GET, "/api/torneos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
-                        .requestMatchers(HttpMethod.GET, "/api/v2/torneos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
+                        // TORNEOS
+                        // Los torneos son información pública.
+                        .requestMatchers(HttpMethod.GET, "/api/torneos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/torneos/**").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/torneos/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
+
                         .requestMatchers(HttpMethod.PUT, "/api/torneos/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/torneos/**").hasRole("ADMIN")
 
-                        // Equipos
+                        .requestMatchers(HttpMethod.DELETE, "/api/torneos/**")
+                        .hasRole("ADMIN")
+
+
+                        // EQUIPOS
                         .requestMatchers(HttpMethod.GET, "/api/equipos/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
                         .requestMatchers(HttpMethod.POST, "/api/equipos/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/equipos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/equipos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
 
-                        // Inscripciones
+                        .requestMatchers(HttpMethod.PUT, "/api/equipos/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/equipos/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
+
+                        // INSCRIPCIONES
                         .requestMatchers("/api/inscripciones/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
                         .requestMatchers("/api/v2/inscripciones/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
 
-                        // Sanciones: solo ADMIN
-                        .requestMatchers("/api/sanciones/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v2/sanciones/**").hasRole("ADMIN")
 
-                        // Partidas y resultados
-                        .requestMatchers("/api/partidas/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
-                        .requestMatchers("/api/v2/partidas/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
-                        .requestMatchers("/api/resultados/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
-                        .requestMatchers("/api/v2/resultados/**")
+                        // SANCIONES
+                        // EP3 permite que ORGANIZADOR aplique sanciones.
+                        .requestMatchers("/api/sanciones/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
 
-                        // Rankings
-                        .requestMatchers(HttpMethod.GET, "/api/rankings/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
-                        .requestMatchers(HttpMethod.GET, "/api/v2/rankings/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+                        .requestMatchers("/api/v2/sanciones/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+
+                        // PARTIDAS
+                        // Las llaves/calendarios pueden ser consultados por visitantes.
+                        .requestMatchers(HttpMethod.GET, "/api/partidas/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/partidas/**").permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/api/partidas/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/partidas/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/partidas/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+
+                        // RESULTADOS
+                        // Los resultados pueden ser consultados públicamente.
+                        .requestMatchers(HttpMethod.GET, "/api/resultados/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/resultados/**").permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/api/resultados/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/resultados/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+
+                        // RANKINGS
+                        // El visitante puede consultar las tablas de posiciones.
+                        .requestMatchers(HttpMethod.GET, "/api/rankings/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/rankings/**").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/rankings/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
+
                         .requestMatchers(HttpMethod.PUT, "/api/rankings/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
+
                         .requestMatchers(HttpMethod.DELETE, "/api/rankings/**")
                         .hasRole("ADMIN")
 
-                        // Premios
-                        .requestMatchers("/api/premios/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
-                        .requestMatchers("/api/v2/premios/**")
+
+                        // PREMIOS
+                        // Se pueden consultar públicamente.
+                        .requestMatchers(HttpMethod.GET, "/api/premios/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/premios/**").permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/api/premios/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
 
-                        // Todo lo demás requiere token
+                        .requestMatchers(HttpMethod.PUT, "/api/premios/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+
+                        // Cualquier otro endpoint requiere sesión
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth ->

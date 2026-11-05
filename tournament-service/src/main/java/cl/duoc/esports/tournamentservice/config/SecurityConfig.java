@@ -61,11 +61,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/h2-console/**"
-                        ).permitAll()
+                                HttpMethod.GET,
+                                "/api/torneos/**",
+                                "/api/v2/torneos/**"
+                        )
+                        .permitAll()
 
 
                         .requestMatchers(HttpMethod.GET, "/api/torneos/**", "/api/v2/torneos/**")

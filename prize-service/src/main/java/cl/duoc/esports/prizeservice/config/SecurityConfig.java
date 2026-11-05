@@ -67,7 +67,16 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
 
-                        .requestMatchers("/api/premios/**", "/api/v2/premios/**")
+                        .requestMatchers(HttpMethod.GET, "/api/premios/**", "/api/v2/premios/**")
+                        .permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/api/premios/**", "/api/v2/premios/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/premios/**", "/api/v2/premios/**")
+                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/premios/**", "/api/v2/premios/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
 
                         .anyRequest().authenticated()
