@@ -132,6 +132,8 @@ public class SecurityConfig {
                         // Cuentas de acceso: solo ADMIN
                         .requestMatchers("/api/auth/cuentas/**").hasRole("ADMIN")
 
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
+
                         // Usuarios: por ahora solo ADMIN.
                         // Más adelante crearemos acceso al perfil propio.
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")

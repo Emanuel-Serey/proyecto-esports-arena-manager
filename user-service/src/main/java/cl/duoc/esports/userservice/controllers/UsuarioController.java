@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import cl.duoc.esports.userservice.dto.RegistroUsuarioDTO;
+import org.springframework.security.core.Authentication;
 import java.util.List;
 
 @RestController
@@ -204,5 +205,18 @@ public class UsuarioController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(nuevoUsuario);
+    }
+
+    @GetMapping("/me")
+    @Operation(
+            summary = "Obtener mi perfil",
+            description = "Obtiene los datos del usuario autenticado mediante el JWT."
+    )
+    public ResponseEntity<UsuarioDTO> obtenerMiPerfil(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+                usuarioService.buscarPorEmail(authentication.getName())
+        );
     }
 }
