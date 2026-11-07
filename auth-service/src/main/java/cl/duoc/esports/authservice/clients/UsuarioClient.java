@@ -1,5 +1,5 @@
 package cl.duoc.esports.authservice.clients;
-
+import org.springframework.web.bind.annotation.PutMapping;
 import cl.duoc.esports.authservice.dto.UsuarioAuthResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,4 +18,10 @@ public interface UsuarioClient {
 
     @GetMapping("/api/usuarios/email/{email}")
     UsuarioAuthResponse buscarUsuarioPorEmail(@PathVariable String email);
+
+    @PutMapping("/api/usuarios/{id}")
+    UsuarioAuthResponse actualizarUsuario(
+            @PathVariable Long id,
+            @RequestBody UsuarioAuthResponse usuario
+    );
 }

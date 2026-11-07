@@ -76,3 +76,4 @@ eureka:
 
 jwt:
   secret: clave-secreta-super-segura-para-jwt-esports-arena-manager-2026
+

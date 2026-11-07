@@ -67,10 +67,51 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/inscripciones/torneo/**").permitAll()
+                        // Inscripciones visibles de un torneo
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/inscripciones/torneo/**",
+                                "/api/v2/inscripciones/torneo/**"
+                        ).permitAll()
 
-                        .requestMatchers("/api/inscripciones/**", "/api/v2/inscripciones/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+                        // Listado completo: solo gestión
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/inscripciones",
+                                "/api/v2/inscripciones"
+                        ).hasAnyRole("ADMIN", "ORGANIZADOR")
+
+                        // Aceptar / rechazar / cambiar estado
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/inscripciones/*/estado/*",
+                                "/api/v2/inscripciones/*/estado/*"
+                        ).hasAnyRole("ADMIN", "ORGANIZADOR")
+
+                        // Crear inscripción
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/inscripciones",
+                                "/api/v2/inscripciones"
+                        ).hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
+                        // Cancelar: después validaremos propiedad
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/inscripciones/*/cancelar",
+                                "/api/v2/inscripciones/*/cancelar"
+                        ).hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
+
+                        // Consultas individuales
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/inscripciones/*",
+                                "/api/inscripciones/jugador/**",
+                                "/api/inscripciones/equipo/**",
+                                "/api/v2/inscripciones/*",
+                                "/api/v2/inscripciones/jugador/**",
+                                "/api/v2/inscripciones/equipo/**"
+                        ).hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
 
                         .anyRequest().authenticated()
                 )

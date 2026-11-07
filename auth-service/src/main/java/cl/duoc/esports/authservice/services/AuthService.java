@@ -205,12 +205,44 @@ public class AuthService {
         return convertirAResponse(cuentaAccesoRepository.save(cuenta));
     }
 
-    public CuentaAccesoResponse actualizarRol(Long id, ActualizarRolRequest request) {
+    public CuentaAccesoResponse actualizarRol(
+            Long id,
+            ActualizarRolRequest request
+    ) {
+
         CuentaAcceso cuenta = obtenerCuentaPorId(id);
+
+        UsuarioAuthResponse usuario;
+
+        try {
+
+            usuario =
+                    usuarioClient.buscarUsuarioPorEmail(
+                            cuenta.getEmail()
+                    );
+
+            usuario.setRol(
+                    request.getRol().name()
+            );
+
+            usuarioClient.actualizarUsuario(
+                    usuario.getId(),
+                    usuario
+            );
+
+        } catch (FeignException ex) {
+
+            throw new AuthException(
+                    "No se pudo sincronizar el rol con user-service",
+                    HttpStatus.BAD_GATEWAY
+            );
+        }
 
         cuenta.setRol(request.getRol());
 
-        return convertirAResponse(cuentaAccesoRepository.save(cuenta));
+        return convertirAResponse(
+                cuentaAccesoRepository.save(cuenta)
+        );
     }
 
     public CuentaAccesoResponse actualizarEstado(Long id, ActualizarEstadoRequest request) {

@@ -18,7 +18,8 @@ import cl.duoc.esports.registrationservice.repositories.InscripcionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -51,7 +52,10 @@ public class InscripcionServiceImpl implements InscripcionService {
 
         validarTipoParticipante(inscripcionDTO);
 
-        TorneoDTO torneoDTO = validarTorneoDisponible(inscripcionDTO.getTorneoId());
+        validarPermisoCrearInscripcion(inscripcionDTO);
+
+        TorneoDTO torneoDTO =
+                validarTorneoDisponible(inscripcionDTO.getTorneoId());
 
         validarCuposDisponibles(torneoDTO);
 
@@ -123,7 +127,11 @@ public class InscripcionServiceImpl implements InscripcionService {
 
         logger.info("Buscando inscripción id={}", id);
 
-        Inscripcion inscripcion = obtenerInscripcionPorId(id);
+        Inscripcion inscripcion =
+                obtenerInscripcionPorId(id);
+
+        validarPermisoSobreInscripcion(inscripcion);
+
         return convertirADTO(inscripcion);
     }
 
@@ -151,12 +159,19 @@ public class InscripcionServiceImpl implements InscripcionService {
 
         logger.info("Cancelando inscripción id={}", id);
 
-        Inscripcion inscripcion = obtenerInscripcionPorId(id);
+        Inscripcion inscripcion =
+                obtenerInscripcionPorId(id);
+
+        validarPermisoSobreInscripcion(inscripcion);
 
         inscripcion.setEstado("CANCELADA");
+
         inscripcionRepository.save(inscripcion);
 
-        logger.info("Inscripción cancelada correctamente id={}", id);
+        logger.info(
+                "Inscripción cancelada correctamente id={}",
+                id
+        );
     }
 
     @Transactional(readOnly = true)
@@ -175,9 +190,15 @@ public class InscripcionServiceImpl implements InscripcionService {
     @Override
     public List<InscripcionDTO> listarPorEquipo(Long equipoId) {
 
-        logger.info("Listando inscripciones por equipoId={}", equipoId);
+        logger.info(
+                "Listando inscripciones por equipoId={}",
+                equipoId
+        );
 
-        return inscripcionRepository.findByEquipoId(equipoId)
+        validarPermisoConsultarEquipo(equipoId);
+
+        return inscripcionRepository
+                .findByEquipoId(equipoId)
                 .stream()
                 .map(this::convertirADTO)
                 .toList();
@@ -187,9 +208,15 @@ public class InscripcionServiceImpl implements InscripcionService {
     @Override
     public List<InscripcionDTO> listarPorJugador(Long jugadorId) {
 
-        logger.info("Listando inscripciones por jugadorId={}", jugadorId);
+        logger.info(
+                "Listando inscripciones por jugadorId={}",
+                jugadorId
+        );
 
-        return inscripcionRepository.findByJugadorId(jugadorId)
+        validarPermisoConsultarJugador(jugadorId);
+
+        return inscripcionRepository
+                .findByJugadorId(jugadorId)
                 .stream()
                 .map(this::convertirADTO)
                 .toList();
@@ -381,6 +408,296 @@ public class InscripcionServiceImpl implements InscripcionService {
                     inscripcionDTO.getTorneoId());
 
             throw new InscripcionException("No se pudo validar si el participante tiene sanciones activas", HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    private void validarPermisoCrearInscripcion(
+            InscripcionDTO inscripcionDTO
+    ) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new InscripcionException(
+                    "Usuario no autenticado",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        boolean esAdminOOrganizador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_ADMIN") ||
+                                        authority.getAuthority().equals("ROLE_ORGANIZADOR")
+                        );
+
+        if (esAdminOOrganizador) {
+            return;
+        }
+
+        try {
+
+            UsuarioDTO usuarioAutenticado =
+                    usuarioClient.buscarUsuarioPorEmail(
+                            authentication.getName()
+                    );
+
+            if (inscripcionDTO.getTipoParticipante()
+                    .equalsIgnoreCase("JUGADOR")) {
+
+                if (!usuarioAutenticado.getId()
+                        .equals(inscripcionDTO.getJugadorId())) {
+
+                    throw new InscripcionException(
+                            "Un jugador solo puede inscribirse a sí mismo",
+                            HttpStatus.FORBIDDEN
+                    );
+                }
+
+                return;
+            }
+
+            if (inscripcionDTO.getTipoParticipante()
+                    .equalsIgnoreCase("EQUIPO")) {
+
+                EquipoDTO equipo =
+                        equipoClient.buscarEquipoPorId(
+                                inscripcionDTO.getEquipoId()
+                        );
+
+                if (!usuarioAutenticado.getId()
+                        .equals(equipo.getCapitanId())) {
+
+                    throw new InscripcionException(
+                            "Solo el capitán puede inscribir al equipo",
+                            HttpStatus.FORBIDDEN
+                    );
+                }
+            }
+
+        } catch (InscripcionException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+
+            logger.error(
+                    "No se pudo validar permisos de inscripción para email={}",
+                    authentication.getName()
+            );
+
+            throw new InscripcionException(
+                    "No se pudo validar el usuario autenticado",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+        }
+    }
+
+    private void validarPermisoSobreInscripcion(
+            Inscripcion inscripcion
+    ) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new InscripcionException(
+                    "Usuario no autenticado",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        boolean esAdminOOrganizador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_ADMIN") ||
+                                        authority.getAuthority().equals("ROLE_ORGANIZADOR")
+                        );
+
+        if (esAdminOOrganizador) {
+            return;
+        }
+
+        try {
+
+            UsuarioDTO usuario =
+                    usuarioClient.buscarUsuarioPorEmail(
+                            authentication.getName()
+                    );
+
+            if ("JUGADOR".equalsIgnoreCase(
+                    inscripcion.getTipoParticipante())) {
+
+                if (!usuario.getId()
+                        .equals(inscripcion.getJugadorId())) {
+
+                    throw new InscripcionException(
+                            "No tiene permisos sobre esta inscripción",
+                            HttpStatus.FORBIDDEN
+                    );
+                }
+
+                return;
+            }
+
+            if ("EQUIPO".equalsIgnoreCase(
+                    inscripcion.getTipoParticipante())) {
+
+                EquipoDTO equipo =
+                        equipoClient.buscarEquipoPorId(
+                                inscripcion.getEquipoId()
+                        );
+
+                if (!usuario.getId()
+                        .equals(equipo.getCapitanId())) {
+
+                    throw new InscripcionException(
+                            "Solo el capitán puede gestionar esta inscripción",
+                            HttpStatus.FORBIDDEN
+                    );
+                }
+            }
+
+        } catch (InscripcionException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+
+            logger.error(
+                    "No se pudo validar permisos sobre inscripción id={}",
+                    inscripcion.getId()
+            );
+
+            throw new InscripcionException(
+                    "No se pudo validar permisos de la inscripción",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+        }
+    }
+
+    private void validarPermisoConsultarJugador(Long jugadorId) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new InscripcionException(
+                    "Usuario no autenticado",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        boolean esAdminOOrganizador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_ADMIN") ||
+                                        authority.getAuthority().equals("ROLE_ORGANIZADOR")
+                        );
+
+        if (esAdminOOrganizador) {
+            return;
+        }
+
+        try {
+
+            UsuarioDTO usuario =
+                    usuarioClient.buscarUsuarioPorEmail(
+                            authentication.getName()
+                    );
+
+            if (!usuario.getId().equals(jugadorId)) {
+
+                throw new InscripcionException(
+                        "Un jugador solo puede consultar sus propias inscripciones",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+
+        } catch (InscripcionException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+
+            logger.error(
+                    "No se pudo validar consulta de inscripciones para jugadorId={}",
+                    jugadorId
+            );
+
+            throw new InscripcionException(
+                    "No se pudo validar permisos del usuario",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+        }
+    }
+
+    private void validarPermisoConsultarEquipo(Long equipoId) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new InscripcionException(
+                    "Usuario no autenticado",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        boolean esAdminOOrganizador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_ADMIN") ||
+                                        authority.getAuthority().equals("ROLE_ORGANIZADOR")
+                        );
+
+        if (esAdminOOrganizador) {
+            return;
+        }
+
+        try {
+
+            UsuarioDTO usuario =
+                    usuarioClient.buscarUsuarioPorEmail(
+                            authentication.getName()
+                    );
+
+            EquipoDTO equipo =
+                    equipoClient.buscarEquipoPorId(equipoId);
+
+            if (!usuario.getId()
+                    .equals(equipo.getCapitanId())) {
+
+                throw new InscripcionException(
+                        "Solo el capitán puede consultar las inscripciones del equipo",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+
+        } catch (InscripcionException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+
+            logger.error(
+                    "No se pudo validar consulta de inscripciones para equipoId={}",
+                    equipoId
+            );
+
+            throw new InscripcionException(
+                    "No se pudo validar permisos del equipo",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 
