@@ -18,7 +18,8 @@ import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,6 +53,7 @@ public class EquipoServiceImpl implements EquipoService {
             throw new EquipoException("Ya existe un equipo con ese nombre", HttpStatus.CONFLICT);
         }
 
+        validarPermisoCrearEquipo(equipoDTO.getCapitanId());
         validarJuegoActivo(equipoDTO.getJuegoPrincipalId());
 
         if (equipoDTO.getMiembros() == null || equipoDTO.getMiembros().isEmpty()) {
@@ -120,6 +122,7 @@ public class EquipoServiceImpl implements EquipoService {
         logger.info("Actualizando equipo id={}", id);
 
         Equipo equipo = obtenerEquipoPorId(id);
+        validarPermisoGestionEquipo(equipo);
 
         if (!equipo.getNombre().equalsIgnoreCase(equipoDTO.getNombre())
                 && equipoRepository.existsByNombre(equipoDTO.getNombre())) {
@@ -159,6 +162,7 @@ public class EquipoServiceImpl implements EquipoService {
         logger.info("Desactivando equipo id={}", id);
 
         Equipo equipo = obtenerEquipoPorId(id);
+        validarPermisoGestionEquipo(equipo);
 
         equipo.setEstado("INACTIVO");
         equipoRepository.save(equipo);
@@ -210,6 +214,7 @@ public class EquipoServiceImpl implements EquipoService {
                 miembroDTO.getUsuarioId(), equipoId);
 
         Equipo equipo = obtenerEquipoPorId(equipoId);
+        validarPermisoGestionEquipo(equipo);
 
         validarUsuarioActivo(miembroDTO.getUsuarioId());
 
@@ -268,6 +273,7 @@ public class EquipoServiceImpl implements EquipoService {
         logger.info("Eliminando miembro id={} del equipo id={}", miembroId, equipoId);
 
         Equipo equipo = obtenerEquipoPorId(equipoId);
+        validarPermisoGestionEquipo(equipo);
 
         MiembroEquipo miembro = equipo.getMiembros()
                 .stream()
@@ -385,6 +391,150 @@ public class EquipoServiceImpl implements EquipoService {
                 logger.warn("UsuarioId={} ya pertenece a otro equipo activo", miembro.getUsuarioId());
                 throw new EquipoException("El usuario ya pertenece a otro equipo activo", HttpStatus.CONFLICT);
             }
+        }
+    }
+
+    private void validarPermisoGestionEquipo(Equipo equipo) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new EquipoException(
+                    "Usuario no autenticado",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        boolean esAdminOOrganizador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_ADMIN") ||
+                                        authority.getAuthority().equals("ROLE_ORGANIZADOR")
+                        );
+
+        if (esAdminOOrganizador) {
+            return;
+        }
+
+        boolean esJugador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_JUGADOR")
+                        );
+
+        if (!esJugador) {
+            throw new EquipoException(
+                    "No tiene permisos para gestionar este equipo",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        try {
+
+            UsuarioDTO usuario =
+                    usuarioClient.buscarUsuarioPorEmail(
+                            authentication.getName()
+                    );
+
+            if (!equipo.getCapitanId().equals(usuario.getId())) {
+
+                throw new EquipoException(
+                        "Solo el capitán puede gestionar este equipo",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+
+        } catch (EquipoException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+
+            logger.error(
+                    "No se pudo validar el usuario autenticado email={}",
+                    authentication.getName()
+            );
+
+            throw new EquipoException(
+                    "No se pudo validar el usuario autenticado",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+        }
+    }
+
+    private void validarPermisoCrearEquipo(Long capitanId) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new EquipoException(
+                    "Usuario no autenticado",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        boolean esAdminOOrganizador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_ADMIN") ||
+                                        authority.getAuthority().equals("ROLE_ORGANIZADOR")
+                        );
+
+        if (esAdminOOrganizador) {
+            return;
+        }
+
+        boolean esJugador =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority().equals("ROLE_JUGADOR")
+                        );
+
+        if (!esJugador) {
+            throw new EquipoException(
+                    "No tiene permisos para crear equipos",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        try {
+
+            UsuarioDTO usuario =
+                    usuarioClient.buscarUsuarioPorEmail(
+                            authentication.getName()
+                    );
+
+            if (!capitanId.equals(usuario.getId())) {
+
+                throw new EquipoException(
+                        "Un jugador solo puede crear un equipo siendo él mismo el capitán",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+
+        } catch (EquipoException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+
+            logger.error(
+                    "No se pudo validar el usuario autenticado email={}",
+                    authentication.getName()
+            );
+
+            throw new EquipoException(
+                    "No se pudo validar el usuario autenticado",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 
