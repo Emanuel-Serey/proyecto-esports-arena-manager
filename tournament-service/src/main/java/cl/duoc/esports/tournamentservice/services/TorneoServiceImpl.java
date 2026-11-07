@@ -36,6 +36,10 @@ public class TorneoServiceImpl implements TorneoService {
 
         validarJuegoDisponible(torneoDTO.getJuegoId());
 
+        if (!torneoDTO.getCierreInscripcion().isBefore(torneoDTO.getFechaInicio())) {
+            throw new TorneoException("El cierre de inscripción debe ser anterior a la fecha de inicio", HttpStatus.UNPROCESSABLE_CONTENT);
+        }
+
         if (torneoDTO.getFechaFin().isBefore(torneoDTO.getFechaInicio())) {
             logger.warn("Fecha de fin inválida para torneo nombre={}", torneoDTO.getNombre());
             throw new TorneoException("La fecha de fin no puede ser anterior a la fecha de inicio", HttpStatus.UNPROCESSABLE_CONTENT);
@@ -46,6 +50,7 @@ public class TorneoServiceImpl implements TorneoService {
         torneo.setNombre(torneoDTO.getNombre());
         torneo.setJuegoId(torneoDTO.getJuegoId());
         torneo.setFechaInicio(torneoDTO.getFechaInicio());
+        torneo.setCierreInscripcion(torneoDTO.getCierreInscripcion());
         torneo.setFechaFin(torneoDTO.getFechaFin());
         torneo.setCupoMaximo(torneoDTO.getCupoMaximo());
         torneo.setModalidad(torneoDTO.getModalidad());
@@ -94,6 +99,13 @@ public class TorneoServiceImpl implements TorneoService {
 
         validarJuegoDisponible(torneoDTO.getJuegoId());
 
+        if (!torneoDTO.getCierreInscripcion().isBefore(torneoDTO.getFechaInicio())) {
+            throw new TorneoException(
+                    "El cierre de inscripción debe ser anterior a la fecha de inicio",
+                    HttpStatus.UNPROCESSABLE_CONTENT
+            );
+        }
+
         if (torneoDTO.getFechaFin().isBefore(torneoDTO.getFechaInicio())) {
             logger.warn("Fecha de fin inválida al actualizar torneo id={}", id);
             throw new TorneoException("La fecha de fin no puede ser anterior a la fecha de inicio", HttpStatus.UNPROCESSABLE_CONTENT);
@@ -102,6 +114,7 @@ public class TorneoServiceImpl implements TorneoService {
         torneo.setNombre(torneoDTO.getNombre());
         torneo.setJuegoId(torneoDTO.getJuegoId());
         torneo.setFechaInicio(torneoDTO.getFechaInicio());
+        torneo.setCierreInscripcion(torneoDTO.getCierreInscripcion());
         torneo.setFechaFin(torneoDTO.getFechaFin());
         torneo.setCupoMaximo(torneoDTO.getCupoMaximo());
         torneo.setModalidad(torneoDTO.getModalidad());
@@ -206,6 +219,7 @@ public class TorneoServiceImpl implements TorneoService {
         torneoDTO.setNombre(torneo.getNombre());
         torneoDTO.setJuegoId(torneo.getJuegoId());
         torneoDTO.setFechaInicio(torneo.getFechaInicio());
+        torneoDTO.setCierreInscripcion(torneo.getCierreInscripcion());
         torneoDTO.setFechaFin(torneo.getFechaFin());
         torneoDTO.setCupoMaximo(torneo.getCupoMaximo());
         torneoDTO.setEstado(torneo.getEstado());

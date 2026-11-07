@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -61,15 +62,21 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                PathRequest.toH2Console()
+                        ).permitAll()
+
+                        .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/torneos/**",
                                 "/api/v2/torneos/**"
                         )
                         .permitAll()
-
-
-                        .requestMatchers(HttpMethod.GET, "/api/torneos/**", "/api/v2/torneos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
 
                         .requestMatchers(HttpMethod.POST, "/api/torneos/**", "/api/v2/torneos/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")

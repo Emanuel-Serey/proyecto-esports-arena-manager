@@ -15,6 +15,7 @@ public class TorneoDTO {
     private String nombre;
     private Long juegoId;
     private LocalDate fechaInicio;
+    private LocalDate cierreInscripcion;
     private LocalDate fechaFin;
     private Integer cupoMaximo;
     private String estado;

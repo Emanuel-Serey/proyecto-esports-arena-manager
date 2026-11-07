@@ -27,6 +27,9 @@ public class Torneo {
     @Column(nullable = false)
     private LocalDate fechaInicio;
 
+    @Column
+    private LocalDate cierreInscripcion;
+
     @Column(nullable = false)
     private LocalDate fechaFin;
 

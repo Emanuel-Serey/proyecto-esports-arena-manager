@@ -166,6 +166,9 @@ public class SecurityConfig {
 
 
                         // EQUIPOS
+
+                        .requestMatchers(HttpMethod.GET, "/api/equipos/*").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/equipos/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
 
@@ -180,6 +183,13 @@ public class SecurityConfig {
 
 
                         // INSCRIPCIONES
+                        // Inscripciones públicas de un torneo
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/inscripciones/torneo/**"
+                        ).permitAll()
+
+                        // Resto de inscripciones protegido
                         .requestMatchers("/api/inscripciones/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR", "JUGADOR")
 

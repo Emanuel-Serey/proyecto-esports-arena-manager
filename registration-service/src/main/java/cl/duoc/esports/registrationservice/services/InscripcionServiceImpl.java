@@ -254,6 +254,10 @@ public class InscripcionServiceImpl implements InscripcionService {
                 throw new InscripcionException("No se puede inscribir en un torneo cerrado", HttpStatus.CONFLICT);
             }
 
+            if (torneoDTO.getCierreInscripcion() != null && LocalDate.now().isAfter(torneoDTO.getCierreInscripcion())) {
+                throw new InscripcionException("El plazo de inscripción para este torneo ya finalizó", HttpStatus.CONFLICT);
+            }
+
             if (LocalDate.now().isAfter(torneoDTO.getFechaInicio())) {
                 throw new InscripcionException("No se puede inscribir después del inicio del torneo", HttpStatus.CONFLICT);
             }

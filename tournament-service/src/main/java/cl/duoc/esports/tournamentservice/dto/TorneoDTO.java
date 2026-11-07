@@ -27,6 +27,9 @@ public class TorneoDTO {
     @FutureOrPresent(message = "La fecha de inicio debe ser actual o futura")
     private LocalDate fechaInicio;
 
+    @NotNull(message = "La fecha de cierre de inscripción es obligatoria")
+    private LocalDate cierreInscripcion;
+
     @NotNull(message = "La fecha de fin es obligatoria")
     private LocalDate fechaFin;
 
