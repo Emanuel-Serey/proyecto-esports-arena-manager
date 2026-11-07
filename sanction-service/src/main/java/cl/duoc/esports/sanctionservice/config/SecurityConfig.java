@@ -76,7 +76,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/sanciones/**",
                                 "/api/v2/sanciones/**"
-                        ).hasRole("ADMIN")
+                        ).hasAnyRole("ADMIN", "ORGANIZADOR")
 
                         .anyRequest().authenticated()
                 )
