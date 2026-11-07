@@ -67,8 +67,16 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
 
-                        .requestMatchers("/api/sanciones/**", "/api/v2/sanciones/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/sanciones/usuario/*/activa",
+                                "/api/sanciones/equipo/*/activa"
+                        ).authenticated()
+
+                        .requestMatchers(
+                                "/api/sanciones/**",
+                                "/api/v2/sanciones/**"
+                        ).hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )
