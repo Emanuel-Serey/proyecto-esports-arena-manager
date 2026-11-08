@@ -137,6 +137,7 @@ public class SecurityConfig {
                         // Usuarios: por ahora solo ADMIN.
                         // Más adelante crearemos acceso al perfil propio.
                         .requestMatchers(HttpMethod.PUT, "/api/usuarios/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/rol/JUGADOR").authenticated()
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/v2/usuarios/**").hasRole("ADMIN")
 
