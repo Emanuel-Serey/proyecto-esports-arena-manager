@@ -78,14 +78,23 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/**", "/api/v2/torneos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/torneos/**",
+                                "/api/v2/torneos/**"
+                        ).hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.PUT, "/api/torneos/**", "/api/v2/torneos/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/torneos/**",
+                                "/api/v2/torneos/**"
+                        ).hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.DELETE, "/api/torneos/**", "/api/v2/torneos/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/torneos/**",
+                                "/api/v2/torneos/**"
+                        ).hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

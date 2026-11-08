@@ -275,6 +275,44 @@ public class SancionServiceImpl implements SancionService {
         }
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<SancionDTO> listarMisSanciones() {
+
+        logger.info("Listando sanciones del usuario autenticado");
+
+        try {
+
+            UsuarioDTO usuario =
+                    usuarioClient.obtenerMiPerfil();
+
+            return sancionRepository
+                    .findByUsuarioId(usuario.getId())
+                    .stream()
+                    .map(this::convertirADTO)
+                    .toList();
+
+        } catch (FeignException.NotFound ex) {
+
+            throw new SancionException(
+                    "Usuario no encontrado",
+                    HttpStatus.NOT_FOUND
+            );
+
+        } catch (Exception ex) {
+
+            logger.error(
+                    "No se pudieron obtener las sanciones del usuario autenticado",
+                    ex
+            );
+
+            throw new SancionException(
+                    "No se pudieron obtener las sanciones del usuario",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+        }
+    }
+
     private SancionDTO convertirADTO(Sancion sancion) {
         SancionDTO sancionDTO = new SancionDTO();
 

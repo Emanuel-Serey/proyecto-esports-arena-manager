@@ -22,6 +22,8 @@ public interface SancionService {
 
     List<SancionDTO> listarPorEstado(String estado);
 
+    List<SancionDTO> listarMisSanciones();
+
     boolean existeSancionActivaUsuario(Long usuarioId);
 
     boolean existeSancionActivaEquipo(Long equipoId);

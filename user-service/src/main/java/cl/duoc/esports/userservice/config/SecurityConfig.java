@@ -67,13 +67,31 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios/registro").permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/usuarios/registro"
+                        ).permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios/email/**").permitAll()
+                        // IMPORTANTE: antes de la regla general de /api/usuarios/**
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/usuarios/email/**"
+                        ).permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/usuarios/me"
+                        ).authenticated()
 
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios/*").authenticated()
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/usuarios/me"
+                        ).authenticated()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/usuarios/*"
+                        ).authenticated()
 
                         .requestMatchers(
                                 "/api/usuarios/**",

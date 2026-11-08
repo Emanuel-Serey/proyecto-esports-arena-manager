@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.Authentication;
 import java.util.List;
 
 @RestController
@@ -188,5 +188,17 @@ public class SancionController {
             @PathVariable Long equipoId) {
 
         return ResponseEntity.ok(sancionService.existeSancionActivaEquipo(equipoId));
+    }
+
+    @GetMapping("/me")
+    @Operation(
+            summary = "Listar mis sanciones",
+            description = "Obtiene el historial de sanciones del usuario autenticado."
+    )
+    public ResponseEntity<List<SancionDTO>> listarMisSanciones() {
+
+        return ResponseEntity.ok(
+                sancionService.listarMisSanciones()
+        );
     }
 }

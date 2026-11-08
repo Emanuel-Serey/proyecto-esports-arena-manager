@@ -24,4 +24,6 @@ public interface TorneoService {
     List<TorneoDTO> listarPorEstado(String estado);
 
     List<TorneoDTO> listarPorFecha(LocalDate fechaInicio);
+
+    void iniciarTorneo(Long id);
 }

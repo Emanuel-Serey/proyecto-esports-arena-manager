@@ -10,4 +10,7 @@ public interface UsuarioClient {
 
     @GetMapping("/{id}")
     UsuarioDTO buscarUsuarioPorId(@PathVariable Long id);
+
+    @GetMapping("/me")
+    UsuarioDTO obtenerMiPerfil();
 }

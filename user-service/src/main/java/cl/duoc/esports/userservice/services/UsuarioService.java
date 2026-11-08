@@ -1,7 +1,7 @@
 package cl.duoc.esports.userservice.services;
 
 import cl.duoc.esports.userservice.dto.UsuarioDTO;
-
+import cl.duoc.esports.userservice.dto.ActualizarPerfilDTO;
 import java.util.List;
 
 public interface UsuarioService {
@@ -23,4 +23,6 @@ public interface UsuarioService {
     List<UsuarioDTO> listarPorEstado(String estado);
 
     List<UsuarioDTO> buscarPorNickname(String nickname);
+
+    UsuarioDTO actualizarMiPerfil(String email, ActualizarPerfilDTO request);
 }

@@ -185,4 +185,18 @@ public class TorneoController {
 
         return ResponseEntity.ok(torneoService.listarPorFecha(fecha));
     }
+
+    @PutMapping("/{id}/iniciar")
+    @Operation(
+            summary = "Iniciar torneo",
+            description = "Cambia un torneo ABIERTO al estado EN_CURSO"
+    )
+    public ResponseEntity<Void> iniciarTorneo(
+            @PathVariable Long id
+    ) {
+
+        torneoService.iniciarTorneo(id);
+
+        return ResponseEntity.noContent().build();
+    }
 }

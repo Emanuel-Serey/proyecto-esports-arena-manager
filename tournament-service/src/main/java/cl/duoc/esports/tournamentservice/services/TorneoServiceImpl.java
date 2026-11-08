@@ -92,39 +92,109 @@ public class TorneoServiceImpl implements TorneoService {
 
         logger.info("Actualizando torneo id={}", id);
 
-        Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {
-            logger.warn("Torneo no encontrado para actualizar. id={}", id);
-            return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
-        });
+        Torneo torneo = torneoRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn(
+                            "Torneo no encontrado para actualizar. id={}",
+                            id
+                    );
 
-        validarJuegoDisponible(torneoDTO.getJuegoId());
+                    return new TorneoException(
+                            "Torneo no encontrado",
+                            HttpStatus.NOT_FOUND
+                    );
+                });
 
-        if (!torneoDTO.getCierreInscripcion().isBefore(torneoDTO.getFechaInicio())) {
+        // EP3:
+        // No se pueden modificar reglas críticas
+        // cuando el torneo ya está en curso o finalizado.
+        if ("EN_CURSO".equalsIgnoreCase(torneo.getEstado()) ||
+                "CERRADO".equalsIgnoreCase(torneo.getEstado()) ||
+                "CANCELADO".equalsIgnoreCase(torneo.getEstado())) {
+
+            throw new TorneoException(
+                    "No se pueden modificar las reglas de un torneo en curso, cerrado o cancelado",
+                    HttpStatus.CONFLICT
+            );
+        }
+
+        // Validar que el juego exista y esté activo
+        validarJuegoDisponible(
+                torneoDTO.getJuegoId()
+        );
+
+        // El cierre de inscripción debe ser ANTES del inicio
+        if (!torneoDTO.getCierreInscripcion()
+                .isBefore(torneoDTO.getFechaInicio())) {
+
             throw new TorneoException(
                     "El cierre de inscripción debe ser anterior a la fecha de inicio",
                     HttpStatus.UNPROCESSABLE_CONTENT
             );
         }
 
-        if (torneoDTO.getFechaFin().isBefore(torneoDTO.getFechaInicio())) {
-            logger.warn("Fecha de fin inválida al actualizar torneo id={}", id);
-            throw new TorneoException("La fecha de fin no puede ser anterior a la fecha de inicio", HttpStatus.UNPROCESSABLE_CONTENT);
+        // La fecha de fin no puede ser anterior al inicio
+        if (torneoDTO.getFechaFin()
+                .isBefore(torneoDTO.getFechaInicio())) {
+
+            logger.warn(
+                    "Fecha de fin inválida al actualizar torneo id={}",
+                    id
+            );
+
+            throw new TorneoException(
+                    "La fecha de fin no puede ser anterior a la fecha de inicio",
+                    HttpStatus.UNPROCESSABLE_CONTENT
+            );
         }
 
-        torneo.setNombre(torneoDTO.getNombre());
-        torneo.setJuegoId(torneoDTO.getJuegoId());
-        torneo.setFechaInicio(torneoDTO.getFechaInicio());
-        torneo.setCierreInscripcion(torneoDTO.getCierreInscripcion());
-        torneo.setFechaFin(torneoDTO.getFechaFin());
-        torneo.setCupoMaximo(torneoDTO.getCupoMaximo());
-        torneo.setModalidad(torneoDTO.getModalidad());
-        torneo.setEstado(torneoDTO.getEstado());
+        // Actualizamos solamente las reglas del torneo
+        torneo.setNombre(
+                torneoDTO.getNombre()
+        );
 
-        Torneo torneoActualizado = torneoRepository.save(torneo);
+        torneo.setJuegoId(
+                torneoDTO.getJuegoId()
+        );
 
-        logger.info("Torneo actualizado correctamente id={}", id);
+        torneo.setFechaInicio(
+                torneoDTO.getFechaInicio()
+        );
 
-        return convertirADTO(torneoActualizado);
+        torneo.setCierreInscripcion(
+                torneoDTO.getCierreInscripcion()
+        );
+
+        torneo.setFechaFin(
+                torneoDTO.getFechaFin()
+        );
+
+        torneo.setCupoMaximo(
+                torneoDTO.getCupoMaximo()
+        );
+
+        torneo.setModalidad(
+                torneoDTO.getModalidad()
+        );
+
+        // IMPORTANTE:
+        // NO hacemos torneo.setEstado(...)
+        // El estado se cambia solamente mediante:
+        // /iniciar
+        // /cerrar
+        // /cancelar
+
+        Torneo torneoActualizado =
+                torneoRepository.save(torneo);
+
+        logger.info(
+                "Torneo actualizado correctamente id={}",
+                id
+        );
+
+        return convertirADTO(
+                torneoActualizado
+        );
     }
 
     @Transactional
@@ -133,15 +203,43 @@ public class TorneoServiceImpl implements TorneoService {
 
         logger.info("Cancelando torneo id={}", id);
 
-        Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {
-            logger.warn("Torneo no encontrado para cancelar. id={}", id);
-            return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
-        });
+        Torneo torneo = torneoRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn(
+                            "Torneo no encontrado para cancelar. id={}",
+                            id
+                    );
+
+                    return new TorneoException(
+                            "Torneo no encontrado",
+                            HttpStatus.NOT_FOUND
+                    );
+                });
+
+        if ("CERRADO".equalsIgnoreCase(torneo.getEstado())) {
+
+            throw new TorneoException(
+                    "No se puede cancelar un torneo que ya está cerrado",
+                    HttpStatus.CONFLICT
+            );
+        }
+
+        if ("CANCELADO".equalsIgnoreCase(torneo.getEstado())) {
+
+            throw new TorneoException(
+                    "El torneo ya se encuentra cancelado",
+                    HttpStatus.CONFLICT
+            );
+        }
 
         torneo.setEstado("CANCELADO");
+
         torneoRepository.save(torneo);
 
-        logger.info("Torneo cancelado correctamente id={}", id);
+        logger.info(
+                "Torneo cancelado correctamente id={}",
+                id
+        );
     }
 
     @Transactional
@@ -151,11 +249,18 @@ public class TorneoServiceImpl implements TorneoService {
         logger.info("Cerrando torneo id={}", id);
 
         Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {
-            logger.warn("Torneo no encontrado para cerrar. id={}", id);
-            return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
-        });
+                    logger.warn("Torneo no encontrado para cerrar. id={}", id);
+
+                    return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
+                });
+
+        // Solo se puede cerrar un torneo que ya esté en curso
+        if (!"EN_CURSO".equalsIgnoreCase(torneo.getEstado())) {
+            throw new TorneoException("Solo un torneo EN_CURSO puede cerrarse", HttpStatus.CONFLICT);
+        }
 
         torneo.setEstado("CERRADO");
+
         torneoRepository.save(torneo);
 
         logger.info("Torneo cerrado correctamente id={}", id);
@@ -186,6 +291,29 @@ public class TorneoServiceImpl implements TorneoService {
                 .stream()
                 .map(this::convertirADTO)
                 .toList();
+    }
+
+    @Transactional
+    @Override
+    public void iniciarTorneo(Long id) {
+
+        logger.info("Iniciando torneo id={}", id);
+
+        Torneo torneo = torneoRepository.findById(id).orElseThrow(() -> {logger.warn("Torneo no encontrado para iniciar. id={}", id);
+
+                    return new TorneoException("Torneo no encontrado", HttpStatus.NOT_FOUND);
+                });
+
+        if (!"ABIERTO".equalsIgnoreCase(torneo.getEstado())) {
+
+            throw new TorneoException("Solo un torneo ABIERTO puede pasar a EN_CURSO", HttpStatus.CONFLICT);
+        }
+
+        torneo.setEstado("EN_CURSO");
+
+        torneoRepository.save(torneo);
+
+        logger.info("Torneo iniciado correctamente id={}", id);
     }
 
     private void validarJuegoDisponible(Long juegoId) {

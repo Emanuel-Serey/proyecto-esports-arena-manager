@@ -63,21 +63,34 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
+                                "/v3/api-docs",
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/premios/**", "/api/v2/premios/**")
-                        .permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/premios/**",
+                                "/api/v2/premios/**"
+                        ).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/premios/**", "/api/v2/premios/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/premios/**",
+                                "/api/v2/premios/**"
+                        ).hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.PUT, "/api/premios/**", "/api/v2/premios/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/premios/**",
+                                "/api/v2/premios/**"
+                        ).hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.DELETE, "/api/premios/**", "/api/v2/premios/**")
-                        .hasAnyRole("ADMIN", "ORGANIZADOR")
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/premios/**",
+                                "/api/v2/premios/**"
+                        ).hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

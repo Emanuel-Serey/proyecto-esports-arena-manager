@@ -136,6 +136,7 @@ public class SecurityConfig {
 
                         // Usuarios: por ahora solo ADMIN.
                         // Más adelante crearemos acceso al perfil propio.
+                        .requestMatchers(HttpMethod.PUT, "/api/usuarios/me").authenticated()
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/v2/usuarios/**").hasRole("ADMIN")
 
@@ -153,9 +154,9 @@ public class SecurityConfig {
                         // TORNEOS
                         .requestMatchers(HttpMethod.GET, "/api/torneos/**", "/api/v2/torneos/**").permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/**", "/api/v2/torneos/**").hasAnyRole("ADMIN", "ORGANIZADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/**", "/api/v2/torneos/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.PUT, "/api/torneos/**", "/api/v2/torneos/**").hasAnyRole("ADMIN", "ORGANIZADOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/torneos/**", "/api/v2/torneos/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.DELETE, "/api/torneos/**", "/api/v2/torneos/**").hasRole("ADMIN")
 
@@ -242,6 +243,8 @@ public class SecurityConfig {
 
                         // SANCIONES
                         // EP3 permite que ORGANIZADOR aplique sanciones.
+                        .requestMatchers(HttpMethod.GET, "/api/sanciones/me").authenticated()
+
                         .requestMatchers("/api/sanciones/**")
                         .hasAnyRole("ADMIN", "ORGANIZADOR")
 
@@ -328,6 +331,7 @@ public class SecurityConfig {
 
 
                         // PREMIOS
+                        // PREMIOS
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/premios/**",
@@ -338,19 +342,19 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/api/premios/**",
                                 "/api/v2/premios/**"
-                        ).hasAnyRole("ADMIN", "ORGANIZADOR")
+                        ).hasRole("ADMIN")
 
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/premios/**",
                                 "/api/v2/premios/**"
-                        ).hasAnyRole("ADMIN", "ORGANIZADOR")
+                        ).hasRole("ADMIN")
 
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/premios/**",
                                 "/api/v2/premios/**"
-                        ).hasAnyRole("ADMIN", "ORGANIZADOR")
+                        ).hasRole("ADMIN")
 
 
                         // Cualquier otro endpoint requiere sesión

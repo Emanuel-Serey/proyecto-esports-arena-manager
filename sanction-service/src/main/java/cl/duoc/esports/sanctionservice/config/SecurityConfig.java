@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
+                                "/v3/api-docs",
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
@@ -74,11 +75,14 @@ public class SecurityConfig {
                         ).authenticated()
 
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/sanciones/me"
+                        ).authenticated()
+
+                        .requestMatchers(
                                 "/api/sanciones/**",
                                 "/api/v2/sanciones/**"
                         ).hasAnyRole("ADMIN", "ORGANIZADOR")
-
-                        .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwt ->

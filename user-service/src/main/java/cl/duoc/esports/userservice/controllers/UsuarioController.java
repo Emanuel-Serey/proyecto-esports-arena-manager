@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import cl.duoc.esports.userservice.dto.RegistroUsuarioDTO;
 import org.springframework.security.core.Authentication;
+import cl.duoc.esports.userservice.dto.ActualizarPerfilDTO;
 import java.util.List;
 
 @RestController
@@ -217,6 +218,24 @@ public class UsuarioController {
     ) {
         return ResponseEntity.ok(
                 usuarioService.buscarPorEmail(authentication.getName())
+        );
+    }
+
+    @PutMapping("/me")
+    @Operation(
+            summary = "Actualizar mi perfil",
+            description = "Permite al usuario autenticado modificar su propio apodo."
+    )
+    public ResponseEntity<UsuarioDTO> actualizarMiPerfil(
+            Authentication authentication,
+            @Valid @RequestBody ActualizarPerfilDTO request
+    ) {
+
+        return ResponseEntity.ok(
+                usuarioService.actualizarMiPerfil(
+                        authentication.getName(),
+                        request
+                )
         );
     }
 }

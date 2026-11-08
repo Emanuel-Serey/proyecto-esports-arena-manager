@@ -3,6 +3,7 @@ package cl.duoc.esports.registrationservice.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -14,4 +15,6 @@ public class EquipoDTO {
     private Long capitanId;
     private Long juegoPrincipalId;
     private String estado;
+
+    private List<MiembroEquipoDTO> miembros;
 }

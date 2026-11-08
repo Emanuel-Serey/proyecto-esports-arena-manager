@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import cl.duoc.esports.registrationservice.clients.JuegoClient;
+import cl.duoc.esports.registrationservice.dto.JuegoDTO;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -30,6 +32,9 @@ public class InscripcionServiceImpl implements InscripcionService {
 
     @Autowired
     private InscripcionRepository inscripcionRepository;
+
+    @Autowired
+    private JuegoClient juegoClient;
 
     @Autowired
     private TorneoClient torneoClient;
@@ -45,25 +50,33 @@ public class InscripcionServiceImpl implements InscripcionService {
 
     @Transactional
     @Override
-    public InscripcionDTO crearInscripcion(InscripcionDTO inscripcionDTO) {
+    public InscripcionDTO crearInscripcion(
+            InscripcionDTO inscripcionDTO
+    ) {
 
-        logger.info("Creando inscripción para torneoId={} tipoParticipante={}",
-                inscripcionDTO.getTorneoId(), inscripcionDTO.getTipoParticipante());
+        logger.info(
+                "Creando inscripción para torneoId={} tipoParticipante={}",
+                inscripcionDTO.getTorneoId(),
+                inscripcionDTO.getTipoParticipante()
+        );
 
         validarTipoParticipante(inscripcionDTO);
 
         validarPermisoCrearInscripcion(inscripcionDTO);
 
-        TorneoDTO torneoDTO =
-                validarTorneoDisponible(inscripcionDTO.getTorneoId());
+        TorneoDTO torneoDTO = validarTorneoDisponible(inscripcionDTO.getTorneoId());
+
+        validarModalidadTorneo(inscripcionDTO, torneoDTO);
 
         validarCuposDisponibles(torneoDTO);
 
         if (inscripcionDTO.getTipoParticipante().equalsIgnoreCase("EQUIPO")) {
-            validarEquipoActivo(inscripcionDTO.getEquipoId());
+
+            validarEquipoParaTorneo(inscripcionDTO.getEquipoId(), torneoDTO);
         }
 
         validarSancionActiva(inscripcionDTO);
+
 
         if (inscripcionDTO.getTipoParticipante().equalsIgnoreCase("EQUIPO")) {
             if (inscripcionRepository.existsByTorneoIdAndEquipoId(
@@ -303,30 +316,95 @@ public class InscripcionServiceImpl implements InscripcionService {
         }
     }
 
-    private void validarEquipoActivo(Long equipoId) {
+    private void validarEquipoParaTorneo(
+            Long equipoId,
+            TorneoDTO torneoDTO
+    ) {
+
         try {
-            logger.info("Validando equipoId={} desde team-service", equipoId);
 
-            EquipoDTO equipoDTO = equipoClient.buscarEquipoPorId(equipoId);
+            logger.info(
+                    "Validando equipoId={} para torneoId={}",
+                    equipoId,
+                    torneoDTO.getId()
+            );
 
-            if (equipoDTO.getEstado() == null || !equipoDTO.getEstado().equalsIgnoreCase("ACTIVO")) {
-                logger.warn("EquipoId={} no está activo", equipoId);
+            EquipoDTO equipo =
+                    equipoClient.buscarEquipoPorId(equipoId);
 
-                throw new InscripcionException("El equipo no está activo", HttpStatus.CONFLICT);
+            if (equipo.getEstado() == null ||
+                    !equipo.getEstado()
+                            .equalsIgnoreCase("ACTIVO")) {
+
+                throw new InscripcionException(
+                        "El equipo no está activo",
+                        HttpStatus.CONFLICT
+                );
+            }
+
+            if (!torneoDTO.getJuegoId()
+                    .equals(equipo.getJuegoPrincipalId())) {
+
+                throw new InscripcionException(
+                        "El equipo no pertenece al juego del torneo",
+                        HttpStatus.UNPROCESSABLE_CONTENT
+                );
+            }
+
+            JuegoDTO juego =
+                    juegoClient.buscarJuegoPorId(
+                            torneoDTO.getJuegoId()
+                    );
+
+            int cantidadMiembros =
+                    equipo.getMiembros() == null
+                            ? 0
+                            : equipo.getMiembros().size();
+
+            if (juego.getJugadoresPorEquipo() == null) {
+
+                throw new InscripcionException(
+                        "No se pudo determinar la cantidad de jugadores requerida",
+                        HttpStatus.SERVICE_UNAVAILABLE
+                );
+            }
+
+            if (cantidadMiembros <
+                    juego.getJugadoresPorEquipo()) {
+
+                throw new InscripcionException(
+                        "El equipo no tiene la cantidad mínima de integrantes requerida. " +
+                                "Requeridos: " +
+                                juego.getJugadoresPorEquipo() +
+                                ", actuales: " +
+                                cantidadMiembros,
+                        HttpStatus.UNPROCESSABLE_CONTENT
+                );
             }
 
         } catch (InscripcionException ex) {
             throw ex;
 
         } catch (FeignException.NotFound ex) {
-            logger.warn("EquipoId={} no encontrado en team-service", equipoId);
 
-            throw new InscripcionException("El equipo no existe", HttpStatus.NOT_FOUND);
+            throw new InscripcionException(
+                    "El equipo o juego asociado no existe",
+                    HttpStatus.NOT_FOUND
+            );
 
         } catch (Exception ex) {
-            logger.error("No se pudo validar equipoId={} desde team-service", equipoId);
 
-            throw new InscripcionException("No se pudo validar el equipo desde team-service", HttpStatus.SERVICE_UNAVAILABLE);
+            logger.error(
+                    "No se pudo validar equipoId={} para torneoId={}",
+                    equipoId,
+                    torneoDTO.getId(),
+                    ex
+            );
+
+            throw new InscripcionException(
+                    "No se pudo validar el equipo para el torneo",
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 
@@ -697,6 +775,27 @@ public class InscripcionServiceImpl implements InscripcionService {
             throw new InscripcionException(
                     "No se pudo validar permisos del equipo",
                     HttpStatus.SERVICE_UNAVAILABLE
+            );
+        }
+    }
+
+    private void validarModalidadTorneo(
+            InscripcionDTO inscripcionDTO,
+            TorneoDTO torneoDTO
+    ) {
+
+        if (torneoDTO.getModalidad() == null) {
+            return;
+        }
+
+        if (!torneoDTO.getModalidad()
+                .equalsIgnoreCase(
+                        inscripcionDTO.getTipoParticipante()
+                )) {
+
+            throw new InscripcionException(
+                    "La modalidad del participante no corresponde a la modalidad del torneo",
+                    HttpStatus.UNPROCESSABLE_CONTENT
             );
         }
     }

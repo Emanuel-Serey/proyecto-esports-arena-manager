@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import cl.duoc.esports.userservice.dto.ActualizarPerfilDTO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -185,6 +185,46 @@ public class UsuarioServiceImpl implements UsuarioService {
             logger.warn("Usuario no encontrado id={}", id);
             return new UsuarioException("Usuario no encontrado", HttpStatus.NOT_FOUND);
         });
+    }
+
+    @Transactional
+    @Override
+    public UsuarioDTO actualizarMiPerfil(
+            String email,
+            ActualizarPerfilDTO request
+    ) {
+
+        logger.info("Actualizando perfil propio email={}", email);
+
+        Usuario usuario =
+                usuarioRepository.findByEmail(email)
+                        .orElseThrow(() ->
+                                new UsuarioException(
+                                        "Usuario no encontrado",
+                                        HttpStatus.NOT_FOUND
+                                )
+                        );
+
+        if (!usuario.getNickname()
+                .equalsIgnoreCase(request.getNickname())
+                && usuarioRepository.existsByNickname(
+                request.getNickname()
+        )) {
+
+            throw new UsuarioException(
+                    "Ya existe un usuario con ese nickname",
+                    HttpStatus.CONFLICT
+            );
+        }
+
+        usuario.setNickname(
+                request.getNickname()
+        );
+
+        Usuario actualizado =
+                usuarioRepository.save(usuario);
+
+        return convertirADTO(actualizado);
     }
 
     private UsuarioDTO convertirADTO(Usuario usuario) {
