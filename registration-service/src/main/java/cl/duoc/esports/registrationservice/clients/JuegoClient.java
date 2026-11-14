@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(
         name = "game-service",
-        url = "http://localhost:8083/api/juegos"
+        url = "${GAME_SERVICE_URL:http://localhost:8083}",
+        path = "/api/juegos"
 )
 public interface JuegoClient {
 

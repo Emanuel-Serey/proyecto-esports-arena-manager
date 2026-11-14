@@ -575,6 +575,7 @@ public class SecurityConfig {
                         .authenticated()
                 )
 
+
                 .oauth2ResourceServer(oauth ->
                         oauth.jwt(jwt ->
                                 jwt.jwtAuthenticationConverter(

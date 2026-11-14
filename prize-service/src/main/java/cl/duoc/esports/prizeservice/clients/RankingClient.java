@@ -5,7 +5,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "ranking-service", url = "http://localhost:8091/api/rankings")
+@FeignClient(
+        name = "ranking-service",
+        url = "${RANKING_SERVICE_URL:http://localhost:8091}",
+        path = "/api/rankings"
+)
 public interface RankingClient {
 
     @GetMapping("/torneo/{torneoId}/participante/{participanteId}")
