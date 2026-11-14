@@ -10,65 +10,89 @@ spring:
       server:
         webmvc:
           routes:
+
             - id: user-service
               uri: lb://user-service
               predicates:
                 - Path=/api/usuarios/**,/api/v2/usuarios/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: game-service
               uri: lb://game-service
               predicates:
                 - Path=/api/juegos/**,/api/v2/juegos/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: tournament-service
               uri: lb://tournament-service
               predicates:
                 - Path=/api/torneos/**,/api/v2/torneos/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: team-service
               uri: lb://team-service
               predicates:
                 - Path=/api/equipos/**,/api/v2/equipos/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: registration-service
               uri: lb://registration-service
               predicates:
                 - Path=/api/inscripciones/**,/api/v2/inscripciones/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: sanction-service
               uri: lb://sanction-service
               predicates:
                 - Path=/api/sanciones/**,/api/v2/sanciones/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: match-service
               uri: lb://match-service
               predicates:
                 - Path=/api/partidas/**,/api/v2/partidas/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: result-service
               uri: lb://result-service
               predicates:
                 - Path=/api/resultados/**,/api/v2/resultados/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: ranking-service
               uri: lb://ranking-service
               predicates:
                 - Path=/api/rankings/**,/api/v2/rankings/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: prize-service
               uri: lb://prize-service
               predicates:
                 - Path=/api/premios/**,/api/v2/premios/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
             - id: auth-service
               uri: lb://auth-service
               predicates:
                 - Path=/api/auth/**
+              filters:
+                - RemoveRequestHeader=Accept-Encoding
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
   instance:
     prefer-ip-address: true
     hostname: localhost
@@ -76,4 +100,3 @@ eureka:
 
 jwt:
   secret: clave-secreta-super-segura-para-jwt-esports-arena-manager-2026
-
