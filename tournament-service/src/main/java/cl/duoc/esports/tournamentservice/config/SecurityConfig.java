@@ -12,7 +12,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -26,6 +25,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
+
         SecretKey key = new SecretKeySpec(
                 secret.getBytes(StandardCharsets.UTF_8),
                 "HmacSHA256"
@@ -39,68 +39,93 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+
+        JwtGrantedAuthoritiesConverter authoritiesConverter =
+                new JwtGrantedAuthoritiesConverter();
 
         authoritiesConverter.setAuthoritiesClaimName("rol");
         authoritiesConverter.setAuthorityPrefix("ROLE_");
 
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        JwtAuthenticationConverter converter =
+                new JwtAuthenticationConverter();
+
+        converter.setJwtGrantedAuthoritiesConverter(
+                authoritiesConverter
+        );
 
         return converter;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
 
         http
-                .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .csrf(csrf ->
+                        csrf.disable()
                 )
-                .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-
-                        .requestMatchers(
-                                PathRequest.toH2Console()
-                        ).permitAll()
-
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/torneos/**",
-                                "/api/v2/torneos/**"
+                .headers(headers ->
+                        headers.frameOptions(
+                                frame ->
+                                        frame.disable()
                         )
-                        .permitAll()
-
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/torneos/**",
-                                "/api/v2/torneos/**"
-                        ).hasRole("ADMIN")
-
-                        .requestMatchers(
-                                HttpMethod.PUT,
-                                "/api/torneos/**",
-                                "/api/v2/torneos/**"
-                        ).hasRole("ADMIN")
-
-                        .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/api/torneos/**",
-                                "/api/v2/torneos/**"
-                        ).hasRole("ADMIN")
-
-                        .anyRequest().authenticated()
                 )
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+
+                .authorizeHttpRequests(auth ->
+                        auth
+
+                                .requestMatchers(
+                                        "/swagger-ui.html",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**"
+                                )
+                                .permitAll()
+
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/torneos/**",
+                                        "/api/v2/torneos/**"
+                                )
+                                .permitAll()
+
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/torneos/**",
+                                        "/api/v2/torneos/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                .requestMatchers(
+                                        HttpMethod.PUT,
+                                        "/api/torneos/**",
+                                        "/api/v2/torneos/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                .requestMatchers(
+                                        HttpMethod.DELETE,
+                                        "/api/torneos/**",
+                                        "/api/v2/torneos/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                .anyRequest()
+                                .authenticated()
+                )
+
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwt ->
-                                jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
+                                jwt.jwtAuthenticationConverter(
+                                        jwtAuthenticationConverter()
+                                )
                         )
                 );
 
